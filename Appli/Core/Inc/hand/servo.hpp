@@ -71,6 +71,17 @@ public:
     // Send a Ping instruction to the given ID and expect a status packet
     bool ping(uint8_t id);
 
+    // Sync write positions to multiple servos at once (SCS_SYNC_WRITE 0x83)
+    // ids: array of servo IDs, positions: array of 16-bit positions, times_ms: per-servo time (can be same for all)
+    // count: number of servos (max 6 expected)
+    bool syncWritePositions(const uint8_t* ids, const uint16_t* positions, const uint16_t* times_ms, size_t count);
+
+    // Split read (non-blocking request/finish pattern): startRead only transmits the read request packet,
+    // finishRead performs the receive and copies params into out (out must be sized for len bytes).
+    // startReadRegister returns expected_rx (total bytes to receive) via expected_rx_out and true on TX success.
+    bool startReadRegister(uint8_t id, uint8_t reg, uint8_t len, uint16_t& expected_rx_out);
+    bool finishReadRegister(uint8_t id, uint8_t len, uint8_t* out, uint16_t expected_rx);
+
 private:
     ISerialPort& port_;
     static constexpr size_t BUF_SIZE = 64;
