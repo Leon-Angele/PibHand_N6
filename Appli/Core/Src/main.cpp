@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file           : main.cpp
-  * @brief          : Main program body (C++ version)
+  * @brief          : Main program body (C++ version) for NUCLEO-N657X0-Q
   ******************************************************************************
   * @attention
   *
@@ -21,7 +21,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "hand/hand_config.hpp"
+#include "hand/servo.hpp"
+#include "hand/hand_controller.hpp"
+#include "hand/serial_commander.hpp"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,6 +50,46 @@ DMA_HandleTypeDef handle_GPDMA1_Channel1;
 DMA_HandleTypeDef handle_GPDMA1_Channel0;
 
 /* USER CODE BEGIN PV */
+
+// 1. Forward-Deklarationen
+extern HandController rightHand;
+extern HandController leftHand;
+
+// 2. Der Executor: Verbindet ROS2-Befehle mit der Motor-Logik
+class GripExecutor : public ICommandExecutor {
+public:
+    bool executeGrip(HandControl::Hand::Side side, HandControl::GripType grip) override {
+        // Starte den Griff mit 1000ms weicher Übergangszeit
+        if (side == HandControl::Hand::Side::Right) {
+            rightHand.setTargetGrip(grip, 1000); 
+        } else {
+            leftHand.setTargetGrip(grip, 1000);
+        }
+        return true;
+    }
+};
+
+// 3. Hardware-Schnittstellen instanziieren
+// Port für die Servos (USART3)
+Stm32UartDmaPort servoPort(&huart3);
+ServoBus servoBus(servoPort);
+
+/** * HINWEIS: Für ROS 2 über USB nutzt man am Nucleo oft USART2 (VCP).
+ * Falls du diesen in CubeMX noch nicht aktiviert hast, nutzt der Commander
+ * hier als Platzhalter den servoPort, damit der Code kompiliert.
+ */
+// extern UART_HandleTypeDef huart2; 
+// Stm32UartDmaPort rosPort(&huart2);
+// SerialCommander commander(rosPort);
+SerialCommander commander(servoPort); 
+
+// 4. Die Controller-Instanzen
+HandController rightHand(HandControl::Hand::Side::Right, servoBus);
+HandController leftHand(HandControl::Hand::Side::Left, servoBus);
+GripExecutor gripExecutor;
+
+// Puffer für den UART-Empfang (Interrupt-basiert)
+uint8_t rx_byte = 0;
 
 /* USER CODE END PV */
 
@@ -95,6 +138,12 @@ int main(void)
   SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
 
+  // Commander mit dem Executor verknüpfen
+  commander.setExecutor(&gripExecutor);
+
+  // Empfang für den ROS2-Port starten (Beispiel USART2 einkommentieren falls vorhanden)
+  // HAL_UART_Receive_IT(&huart2, &rx_byte, 1);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -104,6 +153,22 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+    // 1. Eingehende serielle Befehle verarbeiten
+    commander.processCommand();
+
+    // 2. 100Hz Control Loop für die Hände (alle 10ms)
+    static uint32_t last_100hz_tick = 0;
+    uint32_t current_tick = HAL_GetTick();
+    
+    if (current_tick - last_100hz_tick >= 10) {
+        last_100hz_tick = current_tick;
+        
+        // Berechnet Trajektorien, checkt Telemetrie und sendet Sync-Write an Servos
+        rightHand.update();
+        leftHand.update();
+    }
+
   }
   /* USER CODE END 3 */
 }
@@ -115,13 +180,10 @@ int main(void)
   */
 static void MX_CACHEAXI_Init(void)
 {
-
   /* USER CODE BEGIN CACHEAXI_Init 0 */
-
   /* USER CODE END CACHEAXI_Init 0 */
 
   /* USER CODE BEGIN CACHEAXI_Init 1 */
-
   /* USER CODE END CACHEAXI_Init 1 */
   hcacheaxi.Instance = CACHEAXI;
   if (HAL_CACHEAXI_Init(&hcacheaxi) != HAL_OK)
@@ -129,9 +191,7 @@ static void MX_CACHEAXI_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CACHEAXI_Init 2 */
-
   /* USER CODE END CACHEAXI_Init 2 */
-
 }
 
 /**
@@ -141,27 +201,13 @@ static void MX_CACHEAXI_Init(void)
   */
 static void MX_GPDMA1_Init(void)
 {
-
   /* USER CODE BEGIN GPDMA1_Init 0 */
-
   /* USER CODE END GPDMA1_Init 0 */
-
-  /* Peripheral clock enable */
   __HAL_RCC_GPDMA1_CLK_ENABLE();
-
-  /* GPDMA1 interrupt Init */
-    HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
-    HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
-
-  /* USER CODE BEGIN GPDMA1_Init 1 */
-
-  /* USER CODE END GPDMA1_Init 1 */
-  /* USER CODE BEGIN GPDMA1_Init 2 */
-
-  /* USER CODE END GPDMA1_Init 2 */
-
+  HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
+  HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
 }
 
 /**
@@ -169,37 +215,23 @@ static void MX_GPDMA1_Init(void)
   * @param None
   * @retval None
   */
-  static void SystemIsolation_Config(void)
+static void SystemIsolation_Config(void)
 {
-
-  /* USER CODE BEGIN RIF_Init 0 */
-
-  /* USER CODE END RIF_Init 0 */
-
-  /* set all required IPs as secure privileged */
   __HAL_RCC_RIFSC_CLK_ENABLE();
-
-  /*RIMC configuration*/
   RIMC_MasterConfig_t RIMC_master = {0};
   RIMC_master.MasterCID = RIF_CID_1;
   RIMC_master.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_NPRIV;
   HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_ETH1, &RIMC_master);
 
-  /* RIF-Aware IPs Config */
-
-  /* set up GPDMA configuration */
-  /* set GPDMA1 channel 0 used by USART3 */
   if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel0,DMA_CHANNEL_SEC|DMA_CHANNEL_PRIV|DMA_CHANNEL_SRC_SEC|DMA_CHANNEL_DEST_SEC)!= HAL_OK )
   {
     Error_Handler();
   }
-  /* set GPDMA1 channel 1 used by USART3 */
   if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel1,DMA_CHANNEL_SEC|DMA_CHANNEL_PRIV|DMA_CHANNEL_SRC_SEC|DMA_CHANNEL_DEST_SEC)!= HAL_OK )
   {
     Error_Handler();
   }
 
-  /* set up GPIO configuration */
   HAL_GPIO_ConfigPinAttributes(GPIOA,GPIO_PIN_5,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPIOA,GPIO_PIN_7,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPIOA,GPIO_PIN_10,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
@@ -219,31 +251,10 @@ static void MX_GPDMA1_Init(void)
   HAL_GPIO_ConfigPinAttributes(GPIOH,GPIO_PIN_9,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPION,GPIO_PIN_7,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
   HAL_GPIO_ConfigPinAttributes(GPIOO,GPIO_PIN_5,GPIO_PIN_SEC|GPIO_PIN_NPRIV);
-
-  /* USER CODE BEGIN RIF_Init 1 */
-
-  /* USER CODE END RIF_Init 1 */
-  /* USER CODE BEGIN RIF_Init 2 */
-
-  /* USER CODE END RIF_Init 2 */
-
 }
 
-/**
-  * @brief USART3 Initialization Function
-  * @param None
-  * @retval None
-  */
 static void MX_USART3_UART_Init(void)
 {
-
-  /* USER CODE BEGIN USART3_Init 0 */
-
-  /* USER CODE END USART3_Init 0 */
-
-  /* USER CODE BEGIN USART3_Init 1 */
-
-  /* USER CODE END USART3_Init 1 */
   huart3.Instance = USART3;
   huart3.Init.BaudRate = 1000000;
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
@@ -259,94 +270,83 @@ static void MX_USART3_UART_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_UARTEx_SetTxFifoThreshold(&huart3, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetRxFifoThreshold(&huart3, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_DisableFifoMode(&huart3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART3_Init 2 */
-
-  /* USER CODE END USART3_Init 2 */
-
+  HAL_UARTEx_SetTxFifoThreshold(&huart3, UART_TXFIFO_THRESHOLD_1_8);
+  HAL_UARTEx_SetRxFifoThreshold(&huart3, UART_RXFIFO_THRESHOLD_1_8);
+  HAL_UARTEx_DisableFifoMode(&huart3);
 }
 
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-
-  /* USER CODE END MX_GPIO_Init_1 */
-
-  /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOO_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPION_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(PWR_EN_GPIO_Port, PWR_EN_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(CAM_NRST_GPIO_Port, CAM_NRST_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, UCPD1_ISENSE_Pin|UCPD_PWR_EN_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(USB1_OCP_GPIO_Port, USB1_OCP_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PWR_EN_Pin */
   GPIO_InitStruct.Pin = PWR_EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(PWR_EN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : UCPD1_INT_Pin */
   GPIO_InitStruct.Pin = UCPD1_INT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(UCPD1_INT_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : CAM_NRST_Pin */
   GPIO_InitStruct.Pin = CAM_NRST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(CAM_NRST_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : UCPD1_ISENSE_Pin UCPD_PWR_EN_Pin */
   GPIO_InitStruct.Pin = UCPD1_ISENSE_Pin|UCPD_PWR_EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : USB1_OCP_Pin */
   GPIO_InitStruct.Pin = USB1_OCP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(USB1_OCP_GPIO_Port, &GPIO_InitStruct);
-
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-
-  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+ * @brief HAL UART Empfangs-Callback
+ * Leitet Bytes an den Commander weiter oder signalisiert DMA-Ende an den Servo-Port.
+ */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    // A: Empfang von ROS 2 (hier beispielhaft USART2 prüfen)
+    /*
+    if (huart->Instance == USART2) { 
+        commander.feedByte(rx_byte);
+        HAL_UART_Receive_IT(huart, &rx_byte, 1); // Nächstes Byte anfordern
+    }
+    */
+    
+    // B: Telemetrie-Antwort der Servos auf USART3
+    if (huart->Instance == USART3) { 
+        Stm32UartDmaPort::onRxComplete(huart); //
+    }
+}
+
+/**
+ * @brief HAL UART Sende-Callback
+ */
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART3) {
+        Stm32UartDmaPort::onTxComplete(huart); //
+    }
+}
 
 /* USER CODE END 4 */
 
@@ -360,7 +360,6 @@ extern "C" {
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
   {
@@ -368,19 +367,8 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
 #ifdef __cplusplus

@@ -1,6 +1,6 @@
 # PIB Hand Control - STM32N6 Intelligence Edition
 
-Diese Firmware ermöglicht die hochpräzise und intelligente Steuerung von zwei Roboterhänden (jeweils 6 Freiheitsgrade) auf Basis des **NUCLEO-N657X0-Q** (STM32N6-Serie). Die Architektur ist auf geringe Latenz, organische Bewegungen und die zukünftige Integration von Edge-AI optimiert.
+Diese Firmware ermöglicht die Steuerung von zwei Roboterhänden (jeweils 6 Freiheitsgrade) auf Basis des **NUCLEO-N657X0-Q** (STM32N6-Serie). Die Architektur ist auf geringe Latenz, organische Bewegungen und die zukünftige Integration von Edge-AI optimiert.
 
 ## 🚀 Kern-Features
 
