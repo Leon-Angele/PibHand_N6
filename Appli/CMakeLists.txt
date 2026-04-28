@@ -70,6 +70,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 # User sources
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/hand/servo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/hand/serial_commander.cpp
 )
 
 # Link directories setup
