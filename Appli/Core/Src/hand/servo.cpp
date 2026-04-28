@@ -330,17 +330,6 @@ std::optional<int16_t> Servo::getCurrent()
     return static_cast<int16_t>((buf[1] << 8) | buf[0]);
 }
 
-// HAL callbacks glue: these override weak HAL defaults and forward to our port instance
-extern "C" {
-
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
-{
-    Stm32UartDmaPort::onTxComplete(huart);
-}
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    Stm32UartDmaPort::onRxComplete(huart);
-}
-
-} // extern "C"
+// HAL callbacks are implemented in main.cpp and forward to
+// Stm32UartDmaPort::onTxComplete/onRxComplete, so no
+// duplicate definitions are needed here.
