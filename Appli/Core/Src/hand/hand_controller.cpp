@@ -22,6 +22,7 @@ HandController::HandController(Hand::Side side, ServoBus& bus) noexcept
 void HandController::setTargetGrip(GripType grip, uint16_t duration_ms) noexcept
 {
     const auto& cfg = GripDatabase[static_cast<size_t>(grip)];
+    HAND_DEBUG("Side %d starting grip %d (Duration: %d ms)", static_cast<int>(side_), static_cast<int>(grip), duration_ms);
     uint32_t now = HAL_GetTick();
     for (size_t i = 0; i < AXIS_COUNT; ++i) {
         uint16_t tgt_tinker = cfg.positions[i];
@@ -76,6 +77,10 @@ void HandController::update() noexcept
         if (t >= 1.0f) {
             current_pos_[i] = target_pos_[i];
             moving_[i] = false;
+            // Log representative finger (Thumb, index 0) once when it finishes to avoid spamming 100Hz loop
+            if (i == 0) {
+                HAND_DEBUG("Side %d representative finger %d reached target", static_cast<int>(side_), static_cast<int>(i));
+            }
         } else {
             float s = smoothstep(t);
             int32_t startp = static_cast<int32_t>(start_pos_[i]);
@@ -130,7 +135,9 @@ void HandController::update() noexcept
                 // quick attempt to read speed (blocking) - omitted for strict non-blocking; placeholder 0
                 float pos_err = static_cast<float>(static_cast<int32_t>(target_pos_[finger_idx]) - static_cast<int32_t>(current_pos_[finger_idx]));
                 float adj = predictGraspAdjustment(finger_idx, load, speed, pos_err);
-                (void)adj; // placeholder usage
+                if (adj != 0.0f) {
+                    HAND_DEBUG("Adjustment triggered on Side %d, Finger %d! Load: %d", static_cast<int>(side_), static_cast<int>(finger_idx), static_cast<int>(load));
+                }
             }
         }
         // clear pending and advance

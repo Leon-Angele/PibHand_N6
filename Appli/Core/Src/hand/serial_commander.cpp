@@ -27,6 +27,7 @@ void SerialCommander::processCommand() noexcept {
     // If overflow, report and clear buffer
     if (overflow_flag_) {
         const char msg[] = "ERR BUF\n";
+        HAND_DEBUG("ERROR: RX Buffer overflow!");
         sendResponse(msg, sizeof(msg) - 1);
         // Drop data: advance tail to head
         rx_tail_ = rx_head_;
@@ -70,6 +71,7 @@ void SerialCommander::processCommand() noexcept {
         Hand::Side side;
         uint8_t gripId = 0;
         if (!parseGripCommand(reinterpret_cast<uint8_t*>(cmd), cmd_len, side, gripId)) {
+            HAND_DEBUG("CMD ERROR: Invalid syntax or unknown GripID");
             const char msg[] = "ERR SYNTAX\n";
             sendResponse(msg, sizeof(msg) - 1);
             continue;
@@ -78,6 +80,7 @@ void SerialCommander::processCommand() noexcept {
         // Validate gripId
         uint8_t gripCount = static_cast<uint8_t>(GripType::Count);
         if (gripId >= gripCount) {
+            HAND_DEBUG("CMD ERROR: Invalid syntax or unknown GripID");
             const char msg[] = "ERR GRIPID\n";
             sendResponse(msg, sizeof(msg) - 1);
             continue;
@@ -91,6 +94,7 @@ void SerialCommander::processCommand() noexcept {
 
         bool ok = executor_->executeGrip(side, static_cast<GripType>(gripId));
         if (ok) {
+            HAND_DEBUG("CMD OK -> Side: %d, GripID: %d", static_cast<int>(side), static_cast<int>(gripId));
             const char msg[] = "OK\n";
             sendResponse(msg, sizeof(msg) - 1);
         } else {

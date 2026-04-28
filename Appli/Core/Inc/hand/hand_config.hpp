@@ -10,6 +10,18 @@
 #include <array>
 #include <string_view>
 
+// Debug print macro: toggle via DEBUG_PRINTS (0 = off, 1 = on)
+#ifndef DEBUG_PRINTS
+#define DEBUG_PRINTS 1
+#endif
+
+#if DEBUG_PRINTS
+#include <cstdio>
+#define HAND_DEBUG(fmt, ...) std::printf("[HAND] " fmt "\r\n", ##__VA_ARGS__)
+#else
+#define HAND_DEBUG(fmt, ...) ((void)0)
+#endif
+
 namespace HandControl {
 
 /**
