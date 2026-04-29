@@ -1,0 +1,37 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // =========================================================================
+        // This task invokes the STM32CubeProgrammer CLI to program the board.
+        // REQUIREMENT: Board must be in DEVBOOT mode (BOOT1=1) for this to succeed.
+        // =========================================================================
+        {
+            "label": "Flash STM32N6 (DEVBOOT)",
+            "type": "process",
+            "command": "STM32_Programmer_CLI",
+            
+            // AUTOMATION: Automatically runs the "Clean Rebuild" task first.
+            // If the rebuild fails, this flash command will not execute.
+            "dependsOn": [
+                "CMake: clean rebuild"
+            ],
+            
+            "args": [
+                // CONNECTION: Use SWD port and connect 'Under Reset' (UR) 
+                "-c", "port=SWD", "mode=UR",
+                
+                // EXTERNAL LOADER: Required to program the external Octal-SPI/HyperFlash.
+                // Ensure this path points to the correct loader for the STM32N6 DK.
+                "-el", "C:/Program Files (x86)/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/ExternalLoader/MX66UW1G45G_STM32N6570-DK.stldr",
+                // FLASHING FSBL (First Stage Boot Loader):
+                // Using flat binary (.bin) format requires explicit start address (0x70000000).
+                "-d", "${workspaceFolder}/FSBL/build/FSBL-trusted.bin", "0x70000000", "-v", // Verify after write
+                
+                // FLASHING APPLI (Main Application):
+                // Using flat binary (.bin) format requires explicit start address (0x70100000).
+                "-d", "${workspaceFolder}/Appli/build/Appli-trusted.bin", "0x70100000", "-v" // Verify after write
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

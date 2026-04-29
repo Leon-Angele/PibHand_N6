@@ -1,0 +1,5 @@
+../Core/Src/hand/serial_commander.cpp:7:1:SerialCommander::SerialCommander(ISerialPort&)	1
+../Core/Src/hand/serial_commander.cpp:12:6:bool SerialCommander::feedByte(uint8_t)	2
+../Core/Src/hand/serial_commander.cpp:26:6:void SerialCommander::processCommand()	15
+../Core/Src/hand/serial_commander.cpp:107:6:void SerialCommander::sendResponse(const char*, size_t)	3
+../Core/Src/hand/serial_commander.cpp:112:6:static bool SerialCommander::parseGripCommand(const uint8_t*, size_t, HandControl::Hand::Side&, uint8_t&)	16

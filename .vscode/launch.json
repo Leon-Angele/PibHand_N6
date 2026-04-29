@@ -2,25 +2,30 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "STM32N6-DK Hotplug/Debug (PibHand)",
             "type": "stlinkgdbtarget",
             "request": "launch",
-            "name": "STM32N6570 Debug",
             "origin": "snippet",
+            "deviceName": "STM32N657",
+            "deviceCore": "Cortex-M55",
+            
+            // CRITICAL: Tells the debugger NOT to reset the chip upon connection.
+            "serverReset": "None", 
+            
             "cwd": "${workspaceFolder}",
-            "preBuild": "${command:st-stm32-ide-debug-launch.build}",
-            "runEntry": "BOOT_Application", // Set in BOOT_Application
-            "svdPath": "C:/ST/STM32CubeCLT_1.21.0/STMicroelectronics_CMSIS_SVD/STM32N657.svd", // Replace with your .svd path
+            "svdPath": "C:/ST/STM32CubeCLT_1.21.0/STMicroelectronics_CMSIS_SVD/STM32N657.svd",
+            
+            // SYMBOLS ONLY: 'imageFileName' is missing.
             "imagesAndSymbols": [
                 {
-                    "symbolFileName": "${workspaceFolder}/Appli/build/PibHand_N6_Appli.elf",
-                    "imageFileName": "${workspaceFolder}/Appli/build/Appli-trusted.elf",
+                    "symbolFileName": "${workspaceFolder}/Appli/build/PibHand_N6_Appli.elf"
                 },
-
                 {
-                    "symbolFileName": "${workspaceFolder}/FSBL/build/PibHand_N6_FSBL.elf", 
-                    "imageFileName": "${workspaceFolder}/FSBL/build/XIP_FSBL.elf", // Replace this with your path and your_FSBL.elf image
+                    "symbolFileName": "${workspaceFolder}/FSBL/build/PibHand_N6_FSBL.elf"
                 }
             ],
+
+            // LOADER WORKAROUND:
             "serverExtLoader": [
                 {
                     "loader": "C:/Program Files (x86)/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/ExternalLoader/MX66UW1G45G_STM32N6570-DK.stldr",
