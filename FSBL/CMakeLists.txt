@@ -73,16 +73,23 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Remove wrong libob.a library dependency when using cpp files
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
+# --- Fix: Signieren und Konvertieren für STM32N6 (FSBL) ---
+set(TARGET_ELF "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.elf")
+set(FSBL_INPUT "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.bin")
+set(FSBL_OUTPUT "${CMAKE_BINARY_DIR}/FSBL-trusted.bin")
+set(SIGNING_TOOL "C:/ST/STM32CubeProgrammer/bin/STM32_SigningTool_CLI.exe")
 
-# Validate that STM32CubeMX code is compatible with C standard
-if((CMAKE_C_STANDARD EQUAL 90) OR (CMAKE_C_STANDARD EQUAL 99))
-    message(ERROR "Generated code requires C11 or higher")
-endif()
-
-
-
-
-
+add_custom_command(
+    TARGET ${CMAKE_PROJECT_NAME}
+    POST_BUILD
+    COMMAND "${CMAKE_OBJCOPY}" -O binary "${TARGET_ELF}" "${FSBL_INPUT}"
+    COMMAND ${CMAKE_COMMAND} -E echo y > "${CMAKE_BINARY_DIR}/input.txt"
+    COMMAND "${SIGNING_TOOL}" -bin "${FSBL_INPUT}" -nk -of 0x80000000 -t fsbl -o "${FSBL_OUTPUT}" -hv 2.3 -align -dump "${FSBL_OUTPUT}" < "${CMAKE_BINARY_DIR}/input.txt"
+    # Fix: Adresse 0x70000000 für den FSBL
+    COMMAND "${CMAKE_OBJCOPY}" -I binary -O elf32-littlearm -B arm --change-section-address .data=0x70000000 "${FSBL_OUTPUT}" "${CMAKE_BINARY_DIR}/FSBL-trusted.elf"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMMENT "Generating, signing and converting FSBL-trusted.elf"
+)
 
 
 

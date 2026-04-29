@@ -87,16 +87,26 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
 # Remove wrong libob.a library dependency when using cpp files
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 
-# Validate that STM32CubeMX code is compatible with C standard
-if((CMAKE_C_STANDARD EQUAL 90) OR (CMAKE_C_STANDARD EQUAL 99))
-    message(ERROR "Generated code requires C11 or higher")
-endif()
 
 
+# --- Fix: Signieren und Konvertieren für STM32N6 (Appli) ---
+set(TARGET_ELF "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.elf")
+set(APPLI_INPUT "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.bin")
+set(APPLI_OUTPUT "${CMAKE_BINARY_DIR}/Appli-trusted.bin")
 
+# Der Pfad muss EXAKT stimmen - prüfe ob er C:/ST/... oder C:/Program Files/... ist!
+set(SIGNING_TOOL "C:/ST/STM32CubeProgrammer/bin/STM32_SigningTool_CLI.exe")
 
-
-
-
-
-
+add_custom_command(
+    TARGET ${CMAKE_PROJECT_NAME}
+    POST_BUILD
+    # 1. ELF zu BIN
+    COMMAND "${CMAKE_OBJCOPY}" -O binary "${TARGET_ELF}" "${APPLI_INPUT}"
+    # 2. Signieren (Header v2.3 hinzufügen)
+    COMMAND ${CMAKE_COMMAND} -E echo y > "${CMAKE_BINARY_DIR}/input.txt"
+    COMMAND "${SIGNING_TOOL}" -bin "${APPLI_INPUT}" -nk -of 0x80000000 -t fsbl -o "${APPLI_OUTPUT}" -hv 2.3 -align -dump "${APPLI_OUTPUT}" < "${CMAKE_BINARY_DIR}/input.txt"
+    # 3. BIN zurück zu ELF (Fix: LLVM-Syntax nutzt --change-section-address .data=...)
+    COMMAND "${CMAKE_OBJCOPY}" -I binary -O elf32-littlearm -B arm --change-section-address .data=0x70100000 "${APPLI_OUTPUT}" "${CMAKE_BINARY_DIR}/Appli-trusted.elf"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMMENT "Generating, signing and converting Appli-trusted.elf"
+)

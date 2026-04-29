@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "stlinkgdbtarget",
+            "request": "launch",
+            "name": "STM32N6570 Debug",
+            "origin": "snippet",
+            "cwd": "${workspaceFolder}",
+            "preBuild": "${command:st-stm32-ide-debug-launch.build}",
+            "runEntry": "BOOT_Application", // Set in BOOT_Application
+            "svdPath": "C:/ST/STM32CubeCLT_1.21.0/STMicroelectronics_CMSIS_SVD/STM32N657.svd", // Replace with your .svd path
+            "imagesAndSymbols": [
+                {
+                    "symbolFileName": "${workspaceFolder}/Appli/build/PibHand_N6_Appli.elf",
+                    "imageFileName": "${workspaceFolder}/Appli/build/Appli-trusted.elf",
+                },
+
+                {
+                    "symbolFileName": "${workspaceFolder}/FSBL/build/PibHand_N6_FSBL.elf", 
+                    "imageFileName": "${workspaceFolder}/FSBL/build/XIP_FSBL.elf", // Replace this with your path and your_FSBL.elf image
+                }
+            ],
+            "serverExtLoader": [
+                {
+                    "loader": "C:/Program Files (x86)/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/ExternalLoader/MX66UW1G45G_STM32N6570-DK.stldr",
+                    "initialize": false
+                }
+            ]
+        }
+    ]
+}
