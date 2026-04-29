@@ -1,4 +1,5 @@
 ../Core/Inc/hand/servo.hpp:46:14:ServoBus::ServoBus(ISerialPort&)	1
+../Core/Inc/hand/servo.hpp:96:14:Servo::Servo(uint8_t, ServoBus&)	1
 ../Core/Inc/hand/serial_commander.hpp:26:10:void SerialCommander::setExecutor(ICommandExecutor*)	1
 ../Core/Src/hand/hand_bridge.cpp:29:10:virtual bool DefaultGripExecutor::executeGrip(HandControl::Hand::Side, HandControl::GripType)	2
 ../Core/Inc/hand/serial_commander.hpp:18:13:ICommandExecutor::~ICommandExecutor()	1
@@ -12,15 +13,16 @@
 ../Core/Src/hand/hand_bridge.cpp:86:6:void commander_bridge_process()	1
 ../Core/Src/hand/hand_bridge.cpp:90:6:void bridge_on_uart_rx(void*)	2
 ../Core/Src/hand/hand_bridge.cpp:97:6:void bridge_on_uart_tx(void*)	2
+../Core/Src/hand/hand_bridge.cpp:107:17:bool hand_bridge_set_servo_deg(uint8_t, int16_t, uint16_t)	3
 ../Core/Src/hand/hand_bridge.cpp:41:7:CExecutorAdapter::~CExecutorAdapter()	1
 ../Core/Src/hand/hand_bridge.cpp:41:7:virtual CExecutorAdapter::~CExecutorAdapter()	1
 ../Core/Src/hand/hand_bridge.cpp:27:7:DefaultGripExecutor::~DefaultGripExecutor()	1
 ../Core/Src/hand/hand_bridge.cpp:27:7:virtual DefaultGripExecutor::~DefaultGripExecutor()	1
-../Core/Src/hand/hand_bridge.cpp:104:1:void __static_initialization_and_destruction_0()	1
+../Core/Src/hand/hand_bridge.cpp:115:1:void __static_initialization_and_destruction_0()	1
 ../Core/Inc/hand/servo.hpp:16:13:ISerialPort::~ISerialPort()	1
 ../Core/Inc/hand/servo.hpp:16:13:virtual ISerialPort::~ISerialPort()	1
 ../Core/Inc/hand/servo.hpp:24:5:Stm32UartDmaPort::~Stm32UartDmaPort()	1
 ../Core/Inc/hand/servo.hpp:24:5:virtual Stm32UartDmaPort::~Stm32UartDmaPort()	1
-../Core/Src/hand/hand_bridge.cpp:104:1:void __static_initialization_and_destruction_1()	1
-../Core/Src/hand/hand_bridge.cpp:104:1:cpp)	1
-../Core/Src/hand/hand_bridge.cpp:104:1:cpp)	1
+../Core/Src/hand/hand_bridge.cpp:115:1:void __static_initialization_and_destruction_1()	1
+../Core/Src/hand/hand_bridge.cpp:115:1:cpp)	1
+../Core/Src/hand/hand_bridge.cpp:115:1:cpp)	1

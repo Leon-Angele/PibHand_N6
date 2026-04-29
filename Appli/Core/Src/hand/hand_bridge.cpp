@@ -102,3 +102,14 @@ void bridge_on_uart_tx(void* huart) {
 }
 
 } // extern "C"
+
+// C-wrapper to set a raw servo position using degrees (-90..+90)
+extern "C" bool hand_bridge_set_servo_deg(uint8_t id, int16_t degrees, uint16_t time_ms) {
+    if (degrees < -90) degrees = -90;
+    if (degrees > 90) degrees = 90;
+    // Map -90..+90 -> 0..4095
+    uint32_t pos = static_cast<uint32_t>(static_cast<int32_t>(degrees) + 90); // 0..180
+    uint16_t servo_pos = static_cast<uint16_t>((pos * 4095u) / 180u);
+    Servo s(id, servoBus);
+    return s.setPosition(servo_pos, time_ms);
+}

@@ -32,6 +32,16 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>BSP</name>
+			<type>2</type>
+			<location>C:/Users/leon.angele/Desktop/fuckAround/PibHand_N6/Drivers/BSP</location>
+		</link>
+		<link>
+			<name>BSP_Driver</name>
+			<type>2</type>
+			<location>C:/Users/leon.angele/Desktop/fuckAround/PibHand_N6/Drivers/BSP/STM32N6xx_Nucleo</location>
+		</link>
+		<link>
 			<name>Drivers/STM32N6xx_HAL_Driver/stm32n6xx_hal.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal.c</locationURI>
@@ -105,11 +115,6 @@
 			<name>Drivers/STM32N6xx_HAL_Driver/stm32n6xx_hal_xspi.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal_xspi.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo.c</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo.c</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

@@ -32,6 +32,9 @@ void commander_bridge_process(void) ;
 void bridge_on_uart_rx(void* huart) ;
 void bridge_on_uart_tx(void* huart) ;
 
+/* Set raw servo position by ID using degrees (-90..+90). Returns true on success. */
+bool hand_bridge_set_servo_deg(uint8_t id, int16_t degrees, uint16_t time_ms);
+
 #ifdef __cplusplus
 }
 #endif

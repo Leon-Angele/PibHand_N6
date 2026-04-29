@@ -32,6 +32,9 @@ Core/Src/hand/hand_bridge.o: ../Core/Src/hand/hand_bridge.cpp \
  ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_uart.h \
  ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_uart_ex.h \
  ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_xspi.h \
+ ../../Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo.h \
+ ../Core/Inc/stm32n6xx_nucleo_conf.h \
+ ../../Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo_errno.h \
  ../Core/Inc/hand/hand_controller.hpp \
  ../Core/Inc/hand/serial_commander.hpp
 ../Core/Inc/hand/hand_bridge.h:
@@ -69,5 +72,8 @@ Core/Src/hand/hand_bridge.o: ../Core/Src/hand/hand_bridge.cpp \
 ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_uart.h:
 ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_uart_ex.h:
 ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_xspi.h:
+../../Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo.h:
+../Core/Inc/stm32n6xx_nucleo_conf.h:
+../../Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo_errno.h:
 ../Core/Inc/hand/hand_controller.hpp:
 ../Core/Inc/hand/serial_commander.hpp:

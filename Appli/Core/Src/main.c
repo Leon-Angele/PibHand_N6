@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "hand/hand_bridge.h"
+#include "stm32n6xx_nucleo.h"
 
 /* USER CODE END Includes */
 
@@ -41,6 +42,9 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+
+COM_InitTypeDef BspCOMInit;
+__IO uint32_t BspButtonState = BUTTON_RELEASED;
 CACHEAXI_HandleTypeDef hcacheaxi;
 
 UART_HandleTypeDef huart3;
@@ -103,6 +107,10 @@ int main(void)
   SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
     hand_bridge_init();
+    /* Ensure BSP LEDs are initialized before toggling */
+    BSP_LED_Init(LED_BLUE);
+    BSP_LED_Init(LED_RED);
+    BSP_LED_Init(LED_GREEN);
     
   /* USER CODE END 2 */
 
@@ -113,6 +121,31 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    /* Blink all BSP LEDs every 500 ms */
+    static uint32_t last_toggle = 0;
+    const uint32_t blink_ms = 500;
+    uint32_t now = HAL_GetTick();
+    if ((now - last_toggle) >= blink_ms) {
+      last_toggle = now;
+      BSP_LED_Toggle(LED_BLUE);
+      BSP_LED_Toggle(LED_RED);
+      BSP_LED_Toggle(LED_GREEN);
+    }
+
+    /* Drive servos ID=1 and ID=2 every 50 ms between -90 and +90 degrees */
+    static uint32_t last_servo = 0;
+    const uint32_t servo_period_ms = 50;
+    static int16_t servo_target = 90;
+    if ((now - last_servo) >= servo_period_ms) {
+      last_servo = now;
+      // toggle target
+      servo_target = (servo_target == 90) ? -90 : 90;
+      // set both servos (movement time = servo_period_ms)
+      hand_bridge_set_servo_deg(1, servo_target, (uint16_t)servo_period_ms);
+      hand_bridge_set_servo_deg(2, servo_target, (uint16_t)servo_period_ms);
+    }
+
+    HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }

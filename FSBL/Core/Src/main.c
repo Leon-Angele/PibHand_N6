@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stm32n6xx_nucleo.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -156,6 +156,18 @@ BSEC->DBGCR = 0xB451B400;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    /* Simple LED blink: toggle all leds every 500 ms */
+    static uint32_t last_toggle = 0;
+    const uint32_t blink_ms = 500;
+    uint32_t now = HAL_GetTick();
+    if ((now - last_toggle) >= blink_ms) {
+      last_toggle = now;
+      BSP_LED_Toggle(LED_BLUE);
+      BSP_LED_Toggle(LED_RED);
+      BSP_LED_Toggle(LED_GREEN);
+    }
+
+    HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }
