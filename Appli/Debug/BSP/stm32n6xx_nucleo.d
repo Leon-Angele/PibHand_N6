@@ -1,5 +1,7 @@
-Drivers/STM32N6xx_HAL_Driver/stm32n6xx_hal_usart.o: \
- C:/Users/leon.angele/Desktop/fuckAround/PibHand_N6/Drivers/STM32N6xx_HAL_Driver/Src/stm32n6xx_hal_usart.c \
+BSP/stm32n6xx_nucleo.o: \
+ C:/Users/leon.angele/Desktop/fuckAround/PibHand_N6/Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo.c \
+ C:/Users/leon.angele/Desktop/fuckAround/PibHand_N6/Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo.h \
+ ../Core/Inc/stm32n6xx_nucleo_conf.h \
  ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal.h \
  ../Core/Inc/stm32n6xx_hal_conf.h \
  ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_rcc.h \
@@ -30,7 +32,10 @@ Drivers/STM32N6xx_HAL_Driver/stm32n6xx_hal_usart.o: \
  ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_pwr_ex.h \
  ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_uart.h \
  ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_uart_ex.h \
- ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_xspi.h
+ ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_xspi.h \
+ C:/Users/leon.angele/Desktop/fuckAround/PibHand_N6/Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo_errno.h
+C:/Users/leon.angele/Desktop/fuckAround/PibHand_N6/Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo.h:
+../Core/Inc/stm32n6xx_nucleo_conf.h:
 ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal.h:
 ../Core/Inc/stm32n6xx_hal_conf.h:
 ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_rcc.h:
@@ -62,3 +67,4 @@ Drivers/STM32N6xx_HAL_Driver/stm32n6xx_hal_usart.o: \
 ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_uart.h:
 ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_uart_ex.h:
 ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal_xspi.h:
+C:/Users/leon.angele/Desktop/fuckAround/PibHand_N6/Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo_errno.h:

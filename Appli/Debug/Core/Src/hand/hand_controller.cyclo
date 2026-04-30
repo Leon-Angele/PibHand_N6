@@ -1,5 +1,5 @@
-../Core/Inc/hand/hand_config.hpp:110:30:static constexpr uint8_t HandControl::Hand::getServoID(Side, HandControl::Finger)	2
-../Core/Inc/hand/hand_config.hpp:118:31:static constexpr uint16_t HandControl::Hand::mapToServoPos(uint16_t)	1
+../Core/Inc/hand/hand_config.hpp:120:30:static constexpr uint8_t HandControl::Hand::getServoID(Side, HandControl::Finger)	2
+../Core/Inc/hand/hand_config.hpp:128:31:static constexpr uint16_t HandControl::Hand::mapToServoPos(uint16_t)	1
 ../Core/Src/hand/hand_controller.cpp:8:1:HandController::HandController(HandControl::Hand::Side, ServoBus&)	2
 C:\ST\STM32CubeIDE_2.1.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.win32_1.0.100.202602081740\tools\bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/array:214:7:constexpr const std::array<_Tp, _Nm>::value_type& std::array<_Tp, _Nm>::operator[](size_type) const [with _Tp = HandControl::GripConfig; unsigned int _Nm = 7]	1
 ../Core/Src/hand/hand_controller.cpp:22:6:void HandController::setTargetGrip(HandControl::GripType, uint16_t)	2

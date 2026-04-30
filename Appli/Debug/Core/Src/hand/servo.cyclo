@@ -2,26 +2,26 @@
 ../Core/Inc/hand/servo.hpp:16:13:ISerialPort::~ISerialPort()	1
 ../Core/Inc/hand/servo.hpp:16:13:virtual ISerialPort::~ISerialPort()	1
 ../Core/Src/hand/servo.cpp:12:1:Stm32UartDmaPort::Stm32UartDmaPort(UART_HandleTypeDef*, uint32_t, uint32_t)	1
-../Core/Src/hand/servo.cpp:18:6:virtual bool Stm32UartDmaPort::transmitDMA(const uint8_t*, uint16_t)	4
-../Core/Src/hand/servo.cpp:31:6:virtual bool Stm32UartDmaPort::receiveDMA(uint8_t*, uint16_t)	4
-../Core/Src/hand/servo.cpp:44:6:static void Stm32UartDmaPort::onTxComplete(UART_HandleTypeDef*)	3
-../Core/Src/hand/servo.cpp:51:6:static void Stm32UartDmaPort::onRxComplete(UART_HandleTypeDef*)	3
-../Core/Src/hand/servo.cpp:59:9:static uint8_t ServoBus::checksum(const uint8_t*, size_t)	2
-../Core/Src/hand/servo.cpp:66:6:bool ServoBus::writeRegister(uint8_t, uint8_t, const uint8_t*, uint8_t)	12
-../Core/Src/hand/servo.cpp:123:6:bool ServoBus::readRegister(uint8_t, uint8_t, uint8_t, uint8_t*)	11
-../Core/Src/hand/servo.cpp:162:6:bool ServoBus::startReadRegister(uint8_t, uint8_t, uint8_t, uint16_t&)	2
-../Core/Src/hand/servo.cpp:185:6:bool ServoBus::finishReadRegister(uint8_t, uint8_t, uint8_t*, uint16_t)	10
-../Core/Src/hand/servo.cpp:204:6:bool ServoBus::syncWritePositions(const uint8_t*, const uint16_t*, const uint16_t*, size_t)	6
-../Core/Src/hand/servo.cpp:240:6:bool ServoBus::ping(uint8_t)	8
-../Core/Src/hand/servo.cpp:269:6:bool Servo::ping()	1
-../Core/Src/hand/servo.cpp:274:6:bool Servo::setTorqueEnable(bool)	2
-../Core/Src/hand/servo.cpp:280:6:bool Servo::setPosition(uint16_t, uint16_t)	1
-../Core/Src/hand/servo.cpp:290:24:std::optional<short int> Servo::getPosition()	2
-../Core/Src/hand/servo.cpp:298:24:std::optional<short int> Servo::getSpeed()	2
-../Core/Src/hand/servo.cpp:305:24:std::optional<short int> Servo::getLoad()	2
-../Core/Src/hand/servo.cpp:312:24:std::optional<unsigned char> Servo::getVoltage()	2
-../Core/Src/hand/servo.cpp:319:24:std::optional<unsigned char> Servo::getTemperature()	2
-../Core/Src/hand/servo.cpp:326:24:std::optional<short int> Servo::getCurrent()	2
+../Core/Src/hand/servo.cpp:18:6:virtual bool Stm32UartDmaPort::transmitDMA(const uint8_t*, uint16_t)	6
+../Core/Src/hand/servo.cpp:45:6:virtual bool Stm32UartDmaPort::receiveDMA(uint8_t*, uint16_t)	4
+../Core/Src/hand/servo.cpp:58:6:static void Stm32UartDmaPort::onTxComplete(UART_HandleTypeDef*)	3
+../Core/Src/hand/servo.cpp:65:6:static void Stm32UartDmaPort::onRxComplete(UART_HandleTypeDef*)	3
+../Core/Src/hand/servo.cpp:73:9:static uint8_t ServoBus::checksum(const uint8_t*, size_t)	2
+../Core/Src/hand/servo.cpp:80:6:bool ServoBus::writeRegister(uint8_t, uint8_t, const uint8_t*, uint8_t)	12
+../Core/Src/hand/servo.cpp:137:6:bool ServoBus::readRegister(uint8_t, uint8_t, uint8_t, uint8_t*)	11
+../Core/Src/hand/servo.cpp:176:6:bool ServoBus::startReadRegister(uint8_t, uint8_t, uint8_t, uint16_t&)	2
+../Core/Src/hand/servo.cpp:199:6:bool ServoBus::finishReadRegister(uint8_t, uint8_t, uint8_t*, uint16_t)	10
+../Core/Src/hand/servo.cpp:218:6:bool ServoBus::syncWritePositions(const uint8_t*, const uint16_t*, const uint16_t*, size_t)	6
+../Core/Src/hand/servo.cpp:254:6:bool ServoBus::ping(uint8_t)	8
+../Core/Src/hand/servo.cpp:283:6:bool Servo::ping()	1
+../Core/Src/hand/servo.cpp:288:6:bool Servo::setTorqueEnable(bool)	2
+../Core/Src/hand/servo.cpp:294:6:bool Servo::setPosition(uint16_t, uint16_t)	1
+../Core/Src/hand/servo.cpp:304:24:std::optional<short int> Servo::getPosition()	2
+../Core/Src/hand/servo.cpp:312:24:std::optional<short int> Servo::getSpeed()	2
+../Core/Src/hand/servo.cpp:319:24:std::optional<short int> Servo::getLoad()	2
+../Core/Src/hand/servo.cpp:326:24:std::optional<unsigned char> Servo::getVoltage()	2
+../Core/Src/hand/servo.cpp:333:24:std::optional<unsigned char> Servo::getTemperature()	2
+../Core/Src/hand/servo.cpp:340:24:std::optional<short int> Servo::getCurrent()	2
 C:\ST\STM32CubeIDE_2.1.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.win32_1.0.100.202602081740\tools\bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/array:206:7:constexpr std::array<_Tp, _Nm>::value_type& std::array<_Tp, _Nm>::operator[](size_type) [with _Tp = unsigned char; unsigned int _Nm = 64]	1
 C:\ST\STM32CubeIDE_2.1.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.win32_1.0.100.202602081740\tools\bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/optional:116:7:constexpr std::_Optional_payload_base<_Tp>::_Optional_payload_base() [with _Tp = short int]	1
 C:\ST\STM32CubeIDE_2.1.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.win32_1.0.100.202602081740\tools\bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/optional:339:7:constexpr std::_Optional_payload<_Tp, true, true, true>::_Optional_payload() [with _Tp = short int]	1

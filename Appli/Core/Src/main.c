@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "hand/hand_bridge.h"
+#include "hand/hand_config.hpp"
 #include "stm32n6xx_nucleo.h"
 
 /* USER CODE END Includes */
@@ -107,6 +108,7 @@ int main(void)
   SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
     hand_bridge_init();
+
     /* Ensure BSP LEDs are initialized before toggling */
     BSP_LED_Init(LED_BLUE);
     BSP_LED_Init(LED_RED);
@@ -131,6 +133,7 @@ int main(void)
       BSP_LED_Toggle(LED_RED);
       BSP_LED_Toggle(LED_GREEN);
     }
+
 
     /* Drive servos ID=1 and ID=2 every 50 ms between -90 and +90 degrees */
     static uint32_t last_servo = 0;
@@ -450,6 +453,18 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+  /* Inform C++ bridge that UART transmit completed */
+  bridge_on_uart_tx((void*)huart);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  /* Inform C++ bridge that UART receive completed */
+  bridge_on_uart_rx((void*)huart);
+}
 
 /* USER CODE END 4 */
 

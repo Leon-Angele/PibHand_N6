@@ -36,7 +36,17 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>BSP</name>
+			<type>2</type>
+			<location>C:/Users/leon.angele/Desktop/fuckAround/PibHand_N6/Drivers/BSP/STM32N6xx_Nucleo</location>
+		</link>
+		<link>
 			<name>BSP_Driver</name>
+			<type>2</type>
+			<location>C:/Users/leon.angele/Desktop/fuckAround/PibHand_N6/Drivers/BSP/STM32N6xx_Nucleo</location>
+		</link>
+		<link>
+			<name>STM32N6xx_Nucleo</name>
 			<type>2</type>
 			<location>C:/Users/leon.angele/Desktop/fuckAround/PibHand_N6/Drivers/BSP/STM32N6xx_Nucleo</location>
 		</link>

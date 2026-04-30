@@ -18,11 +18,11 @@
 ../Core/Src/hand/hand_bridge.cpp:41:7:virtual CExecutorAdapter::~CExecutorAdapter()	16	static
 ../Core/Src/hand/hand_bridge.cpp:27:7:DefaultGripExecutor::~DefaultGripExecutor()	16	static
 ../Core/Src/hand/hand_bridge.cpp:27:7:virtual DefaultGripExecutor::~DefaultGripExecutor()	16	static
-../Core/Src/hand/hand_bridge.cpp:115:1:void __static_initialization_and_destruction_0()	8	static
+../Core/Src/hand/hand_bridge.cpp:116:1:void __static_initialization_and_destruction_0()	8	static
 ../Core/Inc/hand/servo.hpp:16:13:ISerialPort::~ISerialPort()	16	static
 ../Core/Inc/hand/servo.hpp:16:13:virtual ISerialPort::~ISerialPort()	16	static
 ../Core/Inc/hand/servo.hpp:24:5:Stm32UartDmaPort::~Stm32UartDmaPort()	16	static
 ../Core/Inc/hand/servo.hpp:24:5:virtual Stm32UartDmaPort::~Stm32UartDmaPort()	16	static
-../Core/Src/hand/hand_bridge.cpp:115:1:void __static_initialization_and_destruction_1()	8	static
-../Core/Src/hand/hand_bridge.cpp:115:1:cpp)	8	static
-../Core/Src/hand/hand_bridge.cpp:115:1:cpp)	8	static
+../Core/Src/hand/hand_bridge.cpp:116:1:void __static_initialization_and_destruction_1()	8	static
+../Core/Src/hand/hand_bridge.cpp:116:1:cpp)	8	static
+../Core/Src/hand/hand_bridge.cpp:116:1:cpp)	8	static

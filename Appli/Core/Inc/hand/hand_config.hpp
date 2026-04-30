@@ -6,9 +6,13 @@
 #ifndef HAND_CONFIG_HPP
 #define HAND_CONFIG_HPP
 
+#ifdef __cplusplus
 #include <cstdint>
 #include <array>
 #include <string_view>
+#else
+#include <stdint.h>
+#endif
 
 // Debug print macro: toggle via DEBUG_PRINTS (0 = off, 1 = on)
 #ifndef DEBUG_PRINTS
@@ -16,12 +20,18 @@
 #endif
 
 #if DEBUG_PRINTS
+#ifdef __cplusplus
 #include <cstdio>
 #define HAND_DEBUG(fmt, ...) std::printf("[HAND] " fmt "\r\n", ##__VA_ARGS__)
+#else
+#include <stdio.h>
+#define HAND_DEBUG(fmt, ...) printf("[HAND] " fmt "\r\n", ##__VA_ARGS__)
+#endif
 #else
 #define HAND_DEBUG(fmt, ...) ((void)0)
 #endif
 
+#ifdef __cplusplus
 namespace HandControl {
 
 /**
@@ -122,5 +132,7 @@ public:
 };
 
 } // namespace HandControl
+
+#endif // __cplusplus
 
 #endif // HAND_CONFIG_HPP

@@ -111,5 +111,6 @@ extern "C" bool hand_bridge_set_servo_deg(uint8_t id, int16_t degrees, uint16_t 
     uint32_t pos = static_cast<uint32_t>(static_cast<int32_t>(degrees) + 90); // 0..180
     uint16_t servo_pos = static_cast<uint16_t>((pos * 4095u) / 180u);
     Servo s(id, servoBus);
+    s.setTorqueEnable(true);
     return s.setPosition(servo_pos, time_ms);
 }

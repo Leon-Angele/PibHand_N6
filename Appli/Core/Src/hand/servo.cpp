@@ -18,13 +18,27 @@ Stm32UartDmaPort::Stm32UartDmaPort(UART_HandleTypeDef* huart, uint32_t tx_timeou
 bool Stm32UartDmaPort::transmitDMA(const uint8_t* data, uint16_t length)
 {
     tx_done_ = false;
+
+    // 1. CACHE CLEAN: Zwingt die CPU, die Daten aus dem L1-Cache ins physische RAM zu schreiben.
+    // Das ist beim STM32N6 (Cortex-M55) Pflicht für DMA-Transfers.
+    SCB_CleanDCache_by_Addr((uint32_t*)data, length);
+
+    // 2. DMA Starten
     if (HAL_UART_Transmit_DMA(huart_, (uint8_t*)data, length) != HAL_OK) {
         return false;
     }
+    
+    // 3. Warten auf das tx_done_ Flag (wird vom Interrupt gesetzt)
     uint32_t start = HAL_GetTick();
     while (!tx_done_) {
-        if ((HAL_GetTick() - start) > tx_timeout_ms_) return false;
+        if ((HAL_GetTick() - start) > tx_timeout_ms_) {
+            // 4. TIMEOUT-FIX: Wenn der Interrupt nicht kommt, MÜSSEN wir die HAL abbrechen.
+            // Sonst bleibt huart_->gState für immer auf HAL_UART_STATE_BUSY_TX!
+            HAL_UART_AbortTransmit(huart_);
+            return false;
+        }
     }
+
     return true;
 }
 

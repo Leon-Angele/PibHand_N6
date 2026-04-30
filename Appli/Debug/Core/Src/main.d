@@ -33,7 +33,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../../Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo.h \
  ../Core/Inc/stm32n6xx_nucleo_conf.h \
  ../../Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo_errno.h \
- ../Core/Inc/hand/hand_bridge.h
+ ../Core/Inc/hand/hand_bridge.h ../Core/Inc/hand/hand_config.hpp
 ../Core/Inc/main.h:
 ../../Drivers/STM32N6xx_HAL_Driver/Inc/stm32n6xx_hal.h:
 ../Core/Inc/stm32n6xx_hal_conf.h:
@@ -70,3 +70,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/stm32n6xx_nucleo_conf.h:
 ../../Drivers/BSP/STM32N6xx_Nucleo/stm32n6xx_nucleo_errno.h:
 ../Core/Inc/hand/hand_bridge.h:
+../Core/Inc/hand/hand_config.hpp:
