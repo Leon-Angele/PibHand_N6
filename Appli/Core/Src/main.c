@@ -113,8 +113,39 @@ int main(void)
     BSP_LED_Init(LED_BLUE);
     BSP_LED_Init(LED_RED);
     BSP_LED_Init(LED_GREEN);
-    
+
   /* USER CODE END 2 */
+
+  /* Initialize leds */
+  BSP_LED_Init(LED_BLUE);
+  BSP_LED_Init(LED_RED);
+  BSP_LED_Init(LED_GREEN);
+
+  /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
+  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
+
+  /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no parity */
+  BspCOMInit.BaudRate   = 115200;
+  BspCOMInit.WordLength = COM_WORDLENGTH_8B;
+  BspCOMInit.StopBits   = COM_STOPBITS_1;
+  BspCOMInit.Parity     = COM_PARITY_NONE;
+  BspCOMInit.HwFlowCtl  = COM_HWCONTROL_NONE;
+  if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE)
+  {
+    Error_Handler();
+  }
+
+  /* USER CODE BEGIN BSP */
+
+  /* -- Sample board code to send message over COM1 port ---- */
+  printf("Welcome to STM32 world !\n\rApplication project is running...\n\r");
+
+  /* -- Sample board code to switch on leds ---- */
+  BSP_LED_On(LED_BLUE);
+  BSP_LED_On(LED_RED);
+  BSP_LED_On(LED_GREEN);
+
+  /* USER CODE END BSP */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -135,18 +166,7 @@ int main(void)
     }
 
 
-    /* Drive servos ID=1 and ID=2 every 50 ms between -90 and +90 degrees */
-    static uint32_t last_servo = 0;
-    const uint32_t servo_period_ms = 50;
-    static int16_t servo_target = 90;
-    if ((now - last_servo) >= servo_period_ms) {
-      last_servo = now;
-      // toggle target
-      servo_target = (servo_target == 90) ? -90 : 90;
-      // set both servos (movement time = servo_period_ms)
-      hand_bridge_set_servo_deg(1, servo_target, (uint16_t)servo_period_ms);
-      hand_bridge_set_servo_deg(2, servo_target, (uint16_t)servo_period_ms);
-    }
+
 
     HAL_Delay(10);
   }
@@ -389,6 +409,7 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOO_CLK_ENABLE();
   __HAL_RCC_GPION_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -411,6 +432,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(PWR_EN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PE5 PE6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF3_LPUART1;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : UCPD1_INT_Pin */
   GPIO_InitStruct.Pin = UCPD1_INT_Pin;
@@ -451,8 +480,21 @@ static void MX_GPIO_Init(void)
 
   /* USER CODE END MX_GPIO_Init_2 */
 }
-
 /* USER CODE BEGIN 4 */
+
+// Wir sagen dem Compiler: "Hey, die Funktion gibt es schon im BSP!"
+extern int __io_putchar(int ch);
+
+// Wir stellen die Brücke für printf() bereit
+__attribute__((weak)) int _write(int file, char *ptr, int len)
+{
+  int DataIdx;
+  for (DataIdx = 0; DataIdx < len; DataIdx++)
+  {
+    __io_putchar(*ptr++);
+  }
+  return len;
+}
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
@@ -467,6 +509,19 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 }
 
 /* USER CODE END 4 */
+
+/**
+  * @brief BSP Push Button callback
+  * @param Button Specifies the pressed button
+  * @retval None
+  */
+void BSP_PB_Callback(Button_TypeDef Button)
+{
+  if (Button == BUTTON_USER)
+  {
+    BspButtonState = BUTTON_PRESSED;
+  }
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

@@ -10,10 +10,10 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include Drivers/STM32N6xx_HAL_Driver/subdir.mk
+-include Drivers/BSP/STM32N6xx_Nucleo/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/hand/subdir.mk
 -include Core/Src/subdir.mk
--include BSP/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -89,8 +89,8 @@ all: main-build
 main-build: PibHand_N6_Appli.elf secondary-outputs
 
 # Tool invocations
-PibHand_N6_Appli.elf PibHand_N6_Appli.map: $(OBJS) $(USER_OBJS) C:\Users\leon.angele\Desktop\fuckAround\PibHand_N6\Appli\STM32N657X0HXQ_LRUN.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "PibHand_N6_Appli.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m55 -T"C:\Users\leon.angele\Desktop\fuckAround\PibHand_N6\Appli\STM32N657X0HXQ_LRUN.ld" --specs=nosys.specs -Wl,-Map="PibHand_N6_Appli.map" -Wl,--gc-sections -static -Wl,--cmse-implib -Wl,--out-implib=./secure_nsclib.o --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+PibHand_N6_Appli.elf PibHand_N6_Appli.map: $(OBJS) $(USER_OBJS) C:\Users\leona\Desktop\Projects\PibHand_N6\Appli\STM32N657X0HXQ_LRUN.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "PibHand_N6_Appli.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m55 -T"C:\Users\leona\Desktop\Projects\PibHand_N6\Appli\STM32N657X0HXQ_LRUN.ld" --specs=nosys.specs -Wl,-Map="PibHand_N6_Appli.map" -Wl,--gc-sections -static -Wl,--cmse-implib -Wl,--out-implib=./secure_nsclib.o --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

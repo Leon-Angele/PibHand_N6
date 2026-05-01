@@ -39,9 +39,9 @@ CPP_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
-BSP \
 Core/Src/hand \
 Core/Src \
 Core/Startup \
+Drivers/BSP/STM32N6xx_Nucleo \
 Drivers/STM32N6xx_HAL_Driver \
 

@@ -12,7 +12,6 @@ RM := rm -rf
 -include Drivers/STM32N6xx_HAL_Driver/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
--include BSP_Driver/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -64,8 +63,8 @@ all: main-build
 main-build: PibHand_N6_FSBL.elf secondary-outputs
 
 # Tool invocations
-PibHand_N6_FSBL.elf PibHand_N6_FSBL.map: $(OBJS) $(USER_OBJS) C:\Users\leon.angele\Desktop\fuckAround\PibHand_N6\FSBL\STM32N657X0HXQ_AXISRAM2_fsbl.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "PibHand_N6_FSBL.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m55 -T"C:\Users\leon.angele\Desktop\fuckAround\PibHand_N6\FSBL\STM32N657X0HXQ_AXISRAM2_fsbl.ld" --specs=nosys.specs -Wl,-Map="PibHand_N6_FSBL.map" -Wl,--gc-sections -static -Wl,--cmse-implib -Wl,--out-implib=./secure_nsclib.o --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+PibHand_N6_FSBL.elf PibHand_N6_FSBL.map: $(OBJS) $(USER_OBJS) C:\Users\leona\Desktop\Projects\PibHand_N6\FSBL\STM32N657X0HXQ_AXISRAM2_fsbl.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "PibHand_N6_FSBL.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m55 -T"C:\Users\leona\Desktop\Projects\PibHand_N6\FSBL\STM32N657X0HXQ_AXISRAM2_fsbl.ld" --specs=nosys.specs -Wl,-Map="PibHand_N6_FSBL.map" -Wl,--gc-sections -static -Wl,--cmse-implib -Wl,--out-implib=./secure_nsclib.o --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
