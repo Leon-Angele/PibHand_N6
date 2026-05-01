@@ -111,6 +111,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
+  }
+
 }
 /* USER CODE BEGIN CLK 1 */
 /* USER CODE END CLK 1 */
