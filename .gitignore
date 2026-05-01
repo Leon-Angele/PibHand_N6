@@ -2,5 +2,5 @@ build
 mx.scratch
 !.settings
 
-FSBL\Debug
-Appli\Debug
+FSBL/Debug/
+Appli/Debug/
