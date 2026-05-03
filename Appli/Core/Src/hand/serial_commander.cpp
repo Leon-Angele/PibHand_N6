@@ -35,7 +35,7 @@ void SerialCommander::processCommand() noexcept {
         return;
     }
 
-    // Extract commands delimited by '\n' (or '\r\n')
+    // Extract commands delimited by '\n' or '\r'
     while (rx_tail_ != rx_head_) {
         size_t available = 0;
         uint16_t tail = rx_tail_;
@@ -43,7 +43,7 @@ void SerialCommander::processCommand() noexcept {
         if (head >= tail) available = head - tail;
         else available = RX_BUF_SIZE - (tail - head);
 
-        // Copy up to available or until newline
+        // Copy up to available or until newline (accept both '\n' and '\r' as line terminator)
         char cmd[RX_BUF_SIZE];
         bool found_newline = false;
         size_t i = 0;
@@ -51,7 +51,7 @@ void SerialCommander::processCommand() noexcept {
             uint16_t idx = (tail + (uint16_t)i) % RX_BUF_SIZE;
             char c = static_cast<char>(rx_buf_[idx]);
             cmd[i] = c;
-            if (c == '\n') { found_newline = true; ++i; break; }
+            if (c == '\n' || c == '\r') { found_newline = true; ++i; break; }
         }
 
         if (!found_newline) break; // wait for full line
@@ -80,7 +80,7 @@ void SerialCommander::processCommand() noexcept {
         // Validate gripId
         uint8_t gripCount = static_cast<uint8_t>(GripType::Count);
         if (gripId >= gripCount) {
-            HAND_DEBUG("CMD ERROR: Invalid syntax or unknown GripID");
+            HAND_DEBUG("CMD ERROR: Invalid GripID");
             const char msg[] = "ERR GRIPID\n";
             sendResponse(msg, sizeof(msg) - 1);
             continue;

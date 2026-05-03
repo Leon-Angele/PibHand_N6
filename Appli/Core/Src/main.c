@@ -24,6 +24,7 @@
 #include "hand/hand_bridge.h"
 #include "hand/hand_config.hpp"
 #include "stm32n6xx_nucleo.h"
+#include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -44,10 +45,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-COM_InitTypeDef BspCOMInit;
 __IO uint32_t BspButtonState = BUTTON_RELEASED;
 CACHEAXI_HandleTypeDef hcacheaxi;
 
+UART_HandleTypeDef hlpuart1;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef handle_GPDMA1_Channel1;
 DMA_HandleTypeDef handle_GPDMA1_Channel0;
@@ -67,6 +68,7 @@ static void MX_GPDMA1_Init(void);
 static void MX_CACHEAXI_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_XSPI2_Init(void);
+static void MX_LPUART1_UART_Init(void);
 static void SystemIsolation_Config(void);
 /* USER CODE BEGIN PFP */
 
@@ -105,16 +107,40 @@ int main(void)
   MX_CACHEAXI_Init();
   MX_USART3_UART_Init();
   MX_XSPI2_Init();
+  MX_LPUART1_UART_Init();
   SystemIsolation_Config();
   /* USER CODE BEGIN 2 */
     hand_bridge_init();
+
+    /* Start VCP UART interrupt reception (LPUART1 on PE5/PE6) */
+    HAL_UART_Receive_IT(&hlpuart1, &rx_byte, 1);
 
     /* Ensure BSP LEDs are initialized before toggling */
     BSP_LED_Init(LED_BLUE);
     BSP_LED_Init(LED_RED);
     BSP_LED_Init(LED_GREEN);
-    
+
   /* USER CODE END 2 */
+
+  /* Initialize leds */
+  BSP_LED_Init(LED_BLUE);
+  BSP_LED_Init(LED_RED);
+  BSP_LED_Init(LED_GREEN);
+
+  /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
+  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
+
+  /* USER CODE BEGIN BSP */
+
+  /* -- Sample board code to send message over COM1 port ---- */
+  printf("Welcome to STM32 world !\n\rApplication project is running...\n\r");
+
+  /* -- Sample board code to switch on leds ---- */
+  BSP_LED_On(LED_BLUE);
+  BSP_LED_On(LED_RED);
+  BSP_LED_On(LED_GREEN);
+
+  /* USER CODE END BSP */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -123,6 +149,10 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    /* Main loop orchestration: update servos and process commands */
+    hand_bridge_update();
+    commander_bridge_process();
+
     /* Blink all BSP LEDs every 500 ms */
     static uint32_t last_toggle = 0;
     const uint32_t blink_ms = 500;
@@ -135,18 +165,7 @@ int main(void)
     }
 
 
-    /* Drive servos ID=1 and ID=2 every 50 ms between -90 and +90 degrees */
-    static uint32_t last_servo = 0;
-    const uint32_t servo_period_ms = 50;
-    static int16_t servo_target = 90;
-    if ((now - last_servo) >= servo_period_ms) {
-      last_servo = now;
-      // toggle target
-      servo_target = (servo_target == 90) ? -90 : 90;
-      // set both servos (movement time = servo_period_ms)
-      hand_bridge_set_servo_deg(1, servo_target, (uint16_t)servo_period_ms);
-      hand_bridge_set_servo_deg(2, servo_target, (uint16_t)servo_period_ms);
-    }
+
 
     HAL_Delay(10);
   }
@@ -206,6 +225,102 @@ static void MX_GPDMA1_Init(void)
   /* USER CODE BEGIN GPDMA1_Init 2 */
 
   /* USER CODE END GPDMA1_Init 2 */
+
+}
+
+/**
+  * @brief LPUART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_LPUART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN LPUART1_Init 0 */
+
+  /* USER CODE END LPUART1_Init 0 */
+
+  /* USER CODE BEGIN LPUART1_Init 1 */
+
+  /* USER CODE END LPUART1_Init 1 */
+  hlpuart1.Instance = LPUART1;
+  hlpuart1.Init.BaudRate = 256000;
+  hlpuart1.Init.WordLength = UART_WORDLENGTH_8B;
+  hlpuart1.Init.StopBits = UART_STOPBITS_1;
+  hlpuart1.Init.Parity = UART_PARITY_NONE;
+  hlpuart1.Init.Mode = UART_MODE_TX_RX;
+  hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  hlpuart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  hlpuart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  hlpuart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  hlpuart1.FifoMode = UART_FIFOMODE_ENABLE;  // ENABLE FIFO for buffering!
+  if (HAL_UART_Init(&hlpuart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&hlpuart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&hlpuart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_EnableFifoMode(&hlpuart1) != HAL_OK)  // ENABLE instead of DISABLE!
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN LPUART1_Init 2 */
+
+  /* USER CODE END LPUART1_Init 2 */
+
+}
+
+/**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 1000000;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart3, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart3, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
 
 }
 
@@ -277,54 +392,6 @@ static void MX_GPDMA1_Init(void)
 }
 
 /**
-  * @brief USART3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART3_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART3_Init 0 */
-
-  /* USER CODE END USART3_Init 0 */
-
-  /* USER CODE BEGIN USART3_Init 1 */
-
-  /* USER CODE END USART3_Init 1 */
-  huart3.Instance = USART3;
-  huart3.Init.BaudRate = 1000000;
-  huart3.Init.WordLength = UART_WORDLENGTH_8B;
-  huart3.Init.StopBits = UART_STOPBITS_1;
-  huart3.Init.Parity = UART_PARITY_NONE;
-  huart3.Init.Mode = UART_MODE_TX_RX;
-  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart3.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetTxFifoThreshold(&huart3, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetRxFifoThreshold(&huart3, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_DisableFifoMode(&huart3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART3_Init 2 */
-
-  /* USER CODE END USART3_Init 2 */
-
-}
-
-/**
   * @brief XSPI2 Initialization Function
   * @param None
   * @retval None
@@ -389,6 +456,7 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOO_CLK_ENABLE();
   __HAL_RCC_GPION_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -454,19 +522,73 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+// printf() Unterstützung über LPUART1
+__attribute__((weak)) int _write(int file, char *ptr, int len)
+{
+  HAL_UART_Transmit(&hlpuart1, (uint8_t *)ptr, len, HAL_MAX_DELAY);
+  return len;
+}
+
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-  /* Inform C++ bridge that UART transmit completed */
-  bridge_on_uart_tx((void*)huart);
+  /* USER CODE BEGIN HAL_UART_TxCpltCallback */
+  
+  /* Check if this is the servo bus (USART3) */
+  if (huart == &huart3)
+  {
+    /* Inform C++ bridge that UART transmit completed */
+    bridge_on_uart_tx((void*)huart);
+  }
+  /* Check if this is the VCP UART (LPUART1) */
+  else if (huart == &hlpuart1)
+  {
+    /* Inform C++ bridge that UART transmit completed */
+    bridge_on_uart_tx((void*)huart);
+  }
+  
+  /* USER CODE END HAL_UART_TxCpltCallback */
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  /* Inform C++ bridge that UART receive completed */
-  bridge_on_uart_rx((void*)huart);
+  /* USER CODE BEGIN HAL_UART_RxCpltCallback */
+  
+  /* Check if this is the servo bus (USART3) */
+  if (huart == &huart3)
+  {
+    /* Inform C++ bridge that UART receive completed */
+    bridge_on_uart_rx((void*)huart);
+  }
+  /* Check if this is the VCP UART (LPUART1) */
+  else if (huart == &hlpuart1)
+  {
+    /* Save received byte locally */
+    uint8_t received = rx_byte;
+    
+    /* CRITICAL: Immediately restart interrupt reception to avoid losing next byte! */
+    HAL_UART_Receive_IT(&hlpuart1, &rx_byte, 1);
+    
+    /* Now feed byte to SerialCommander (after RX is restarted) */
+    commander_bridge_feed_byte(received);
+  }
+  
+  /* USER CODE END HAL_UART_RxCpltCallback */
 }
 
 /* USER CODE END 4 */
+
+/**
+  * @brief BSP Push Button callback
+  * @param Button Specifies the pressed button
+  * @retval None
+  */
+void BSP_PB_Callback(Button_TypeDef Button)
+{
+  if (Button == BUTTON_USER)
+  {
+    BspButtonState = BUTTON_PRESSED;
+  }
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

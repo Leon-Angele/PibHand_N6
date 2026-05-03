@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "stm32n6xx_nucleo.h"
+#include <stdio.h> // Wichtig für printf, falls nicht in main.h
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,9 +40,6 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
-COM_InitTypeDef BspCOMInit;
-__IO uint32_t BspButtonState = BUTTON_RELEASED;
 
 XSPI_HandleTypeDef hxspi2;
 
@@ -74,12 +71,10 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* Unlock BSEC Access Port */
-    BSEC->AP_UNLOCK = 0xB4; 
+  BSEC->AP_UNLOCK = 0xB4;
 
   /* Enable Non-Secure and Secure Debug (Mimics DEVBOOT state) */
-BSEC->DBGCR = 0xB451B400; 
-
-/* Optional: Blink an LED here to visually confirm FSBL is running */
+  BSEC->DBGCR = 0xB451B400;
 
   /* USER CODE END 1 */
 
@@ -103,50 +98,8 @@ BSEC->DBGCR = 0xB451B400;
   MX_XSPI2_Init();
   /* USER CODE BEGIN 2 */
 
-  // WICHTIG: Hier muss die Initialisierung deines externen Speichers (XSPI) hin!
-  // Ohne das kracht es beim Sprung sofort (HardFault).
-  // MX_XSPI1_Init(); 
 
-  BSP_LED_Init(LED_BLUE);
-  printf("Welcome to STM32 world !\n\rBoot project is running...\n\r");
-
-  /* USER CODE BEGIN 2 */
-  printf("Jumping to Application at 0x70100000...\n\r");
-  
-  // Hier rufen wir die Sprung-Funktion auf
-  BOOT_Application();
   /* USER CODE END 2 */
-
-  /* Initialize leds */
-  BSP_LED_Init(LED_BLUE);
-  BSP_LED_Init(LED_RED);
-  BSP_LED_Init(LED_GREEN);
-
-  /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
-  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
-
-  /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no parity */
-  BspCOMInit.BaudRate   = 115200;
-  BspCOMInit.WordLength = COM_WORDLENGTH_8B;
-  BspCOMInit.StopBits   = COM_STOPBITS_1;
-  BspCOMInit.Parity     = COM_PARITY_NONE;
-  BspCOMInit.HwFlowCtl  = COM_HWCONTROL_NONE;
-  if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE)
-  {
-    Error_Handler();
-  }
-
-  /* USER CODE BEGIN BSP */
-
-  /* -- Sample board code to send message over COM1 port ---- */
-  printf("Welcome to STM32 world !\n\rBoot project is running...\n\r");
-
-  /* -- Sample board code to switch on leds ---- */
-  BSP_LED_On(LED_BLUE);
-  BSP_LED_On(LED_RED);
-  BSP_LED_On(LED_GREEN);
-
-  /* USER CODE END BSP */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -156,20 +109,9 @@ BSEC->DBGCR = 0xB451B400;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    /* Simple LED blink: toggle all leds every 500 ms */
-    static uint32_t last_toggle = 0;
-    const uint32_t blink_ms = 500;
-    uint32_t now = HAL_GetTick();
-    if ((now - last_toggle) >= blink_ms) {
-      last_toggle = now;
-      BSP_LED_Toggle(LED_BLUE);
-      BSP_LED_Toggle(LED_RED);
-      BSP_LED_Toggle(LED_GREEN);
-    }
-
-    HAL_Delay(10);
-  }
   /* USER CODE END 3 */
+}
+
 }
 /* USER CODE BEGIN CLK 1 */
 /* USER CODE END CLK 1 */
@@ -370,9 +312,9 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPION_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
@@ -383,14 +325,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
   HAL_GPIO_Init(I2C1_SDA_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PE5 PE6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF3_LPUART1;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : I2CA_SCL_Pin */
   GPIO_InitStruct.Pin = I2CA_SCL_Pin;
@@ -422,38 +356,51 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 typedef void (*pFunction)(void);
 
+// Wir sagen dem Compiler: "Hey, die Funktion gibt es schon im BSP!"
+extern int __io_putchar(int ch);
+
+// Wir stellen die Brücke für printf() bereit
+__attribute__((weak)) int _write(int file, char *ptr, int len)
+{
+  int DataIdx;
+  for (DataIdx = 0; DataIdx < len; DataIdx++)
+  {
+    __io_putchar(*ptr++);
+  }
+  return len;
+}
+
+
 void BOOT_Application(void)
 {
   uint32_t JumpAddress;
   pFunction Jump_To_Application;
 
-  // 1. Prüfen, ob an der Zieladresse überhaupt ein gültiger Stackpointer liegt
-  // (Optional, hilft beim Debuggen)
-  
-  // 2. Den Stackpointer der Applikation aus der Vektortabelle laden
+  printf("Preparing to jump...\n\r");
+
+  // 1. SysTick Timer stoppen (sehr wichtig!)
+  SysTick->CTRL = 0;
+  SysTick->LOAD = 0;
+  SysTick->VAL  = 0;
+
+  // 2. HAL deinitialisieren (setzt Peripherie-Zustände zurück)
+  HAL_DeInit();
+
+  // 3. ALLE Interrupts global deaktivieren!
+  // Die Applikation schaltet sie später in ihrer HAL_Init() oder main() wieder ein.
+  __disable_irq();
+
+  // 4. Den Stackpointer der Applikation aus der Vektortabelle laden
   __set_MSP(*(__IO uint32_t*) 0x70100000);
 
-  // 3. Die Reset-Handler-Adresse laden (Startadresse + 4 Byte)
+  // 5. Die Reset-Handler-Adresse laden (Startadresse + 4 Byte)
   JumpAddress = *(__IO uint32_t*) (0x70100000 + 4);
   Jump_To_Application = (pFunction) JumpAddress;
 
-  // 4. Abflug!
+  // 6. Abflug!
   Jump_To_Application();
 }
 /* USER CODE END 4 */
-
-/**
-  * @brief BSP Push Button callback
-  * @param Button Specifies the pressed button
-  * @retval None
-  */
-void BSP_PB_Callback(Button_TypeDef Button)
-{
-  if (Button == BUTTON_USER)
-  {
-    BspButtonState = BUTTON_PRESSED;
-  }
-}
 
 /**
   * @brief  This function is executed in case of error occurrence.

@@ -10,16 +10,18 @@
 
 using namespace HandControl;
 
-// Forward declare HAL handle (defined in main.c)
-extern UART_HandleTypeDef huart3;
+// Forward declare HAL handles (defined in main.c)
+extern UART_HandleTypeDef huart3;    // Servo bus
+extern UART_HandleTypeDef hlpuart1;  // VCP
 
 // C executor callback pointer
 static hand_grip_executor_t c_executor_cb = nullptr;
 
 // Default C++ objects (mirror what main.cpp had)
-static Stm32UartDmaPort servoPort(&huart3);
+static Stm32UartDmaPort servoPort(&huart3);   // USART3 for servo bus
+static Stm32UartDmaPort vpcPort(&hlpuart1);   // LPUART1 for VCP/commands
 static ServoBus servoBus(servoPort);
-static SerialCommander commander(servoPort);
+static SerialCommander commander(vpcPort);    // Commander uses VCP port!
 static HandController rightHand(Hand::Side::Right, servoBus);
 static HandController leftHand(Hand::Side::Left, servoBus);
 
@@ -92,11 +94,17 @@ void bridge_on_uart_rx(void* huart) {
     if (h->Instance == USART3) {
         Stm32UartDmaPort::onRxComplete(h);
     }
+    else if (h->Instance == LPUART1) {
+        Stm32UartDmaPort::onRxComplete(h);
+    }
 }
 
 void bridge_on_uart_tx(void* huart) {
     UART_HandleTypeDef* h = static_cast<UART_HandleTypeDef*>(huart);
     if (h->Instance == USART3) {
+        Stm32UartDmaPort::onTxComplete(h);
+    }
+    else if (h->Instance == LPUART1) {
         Stm32UartDmaPort::onTxComplete(h);
     }
 }
