@@ -1,45 +1,35 @@
-# Deployment Guide: STM32N6 Standalone Boot (NUCLEO-N657X0-Q)
+# =========================
+# STM32N6 Deployment Script
+# PowerShell Version
+# =========================
 
-Dieser Guide beschreibt, wie man die Binaries signiert und in den externen Octo-Flash flasht, damit das Board ohne Debugger startet.
+# --- PFAD ANPASSEN ---
+$PROG_PATH = "C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeProgrammer\bin"
 
-## 1. Hardware-Vorbereitung
-*   **Flash-Vorgang:** Jumper **BOOT1** und **BOOT2** nach **RECHTS** (Development Mode).
-*   **Nach dem Flashen:** Jumper **BOOT1** und **BOOT2** nach **LINKS** (Flash Boot Mode).
+$SIGN_TOOL = Join-Path $PROG_PATH "STM32_SigningTool_CLI.exe"
+$PROG_CLI  = Join-Path $PROG_PATH "STM32_Programmer_CLI.exe"
+$LOADER    = "C:\ST\STM32CubeProgrammer\bin\ExternalLoader\MX25UM51245G_STM32N6570-NUCLEO.stldr"
 
----
+# Input Binaries
+$FSBL_IN  = "C:\Pfad\zu\deiner\FSBL.bin"
+$APPLI_IN = "C:\Pfad\zu\deiner\Appli.bin"
 
-## 2. Signierung & Flash-Skript (Windows CMD/Batch)
+# Output Signed Binaries
+$FSBL_OUT  = "FSBL_signed.bin"
+$APPLI_OUT = "Appli_signed.bin"
 
-Kopiere diesen Block in eine `.bat` Datei oder führe die Befehle in der Eingabeaufforderung aus. 
+Write-Host "=== 1. Signiere Binaries ==="
 
-> **Hinweis:** Passe die Pfade zu deinen `.bin` Dateien und dem STM32CubeProgrammer an.
-```batch
-@echo off
-:: --- PFADE ANPASSEN ---
-set "PROG_PATH=C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeProgrammer\bin"
-set "LOADER=%PROG_PATH%\ExternalLoader\MX25UM51245G_STM32N6570-NUCLEO.stldr"
+& $SIGN_TOOL -bin $FSBL_IN -nk -of 0x70000000 -t fsbl -o $FSBL_OUT -hv 2.3 -align
+& $SIGN_TOOL -bin $APPLI_IN -nk -of 0x70100000 -t ssbl -o $APPLI_OUT -hv 2.3 -align
 
-set "FSBL_IN=C:\Pfad\zu\deiner\FSBL.bin"
-set "APPLI_IN=C:\Pfad\zu\deiner\Appli.bin"
-set "NETWORK_HEX=C:\Pfad\zu\deiner\network_data.hex"
+Write-Host "`n=== 2. Flashen (Board muss im Dev-Mode sein) ==="
 
-:: Pfad zum Signing Tool hinzufügen
-set PATH=%PATH%;%PROG_PATH%
+# FSBL flashen
+& $PROG_CLI -c port=SWD mode=HOTPLUG -el $LOADER -hardRst -w $FSBL_OUT 0x70000000
 
-echo === 1. Signiere Binaries ===
-STM32_SigningTool_CLI.exe -bin "%FSBL_IN%" -nk -of 0x70000000 -t fsbl -o FSBL_signed.bin -hv 2.3 -align
-STM32_SigningTool_CLI.exe -bin "%APPLI_IN%" -nk -of 0x70100000 -t ssbl -o Appli_signed.bin -hv 2.3 -align
+# Application flashen
+& $PROG_CLI -c port=SWD mode=HOTPLUG -el $LOADER -hardRst -w $APPLI_OUT 0x70100000
 
-echo.
-echo === 2. Flashen (Board muss im Dev-Mode sein) ===
-:: FSBL flashen
-STM32_Programmer_CLI.exe -c port=SWD mode=HOTPLUG -el "%LOADER%" -hardRst -w FSBL_signed.bin 0x70000000
-
-:: Application flashen
-STM32_Programmer_CLI.exe -c port=SWD mode=HOTPLUG -el "%LOADER%" -hardRst -w Appli_signed.bin 0x70100000
-
-:: Network Data flashen (Adresse im Hex enthalten)
-STM32_Programmer_CLI.exe -c port=SWD mode=HOTPLUG -el "%LOADER%" -hardRst -w "%NETWORK_HEX%"
-
-echo === FERTIG! Jumper jetzt auf LINKS stellen und Reset drücken. ===
-pause
+Write-Host "`n=== FERTIG! Jumper jetzt auf LINKS stellen und Reset drücken. ==="
+Pause
