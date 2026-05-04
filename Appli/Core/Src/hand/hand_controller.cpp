@@ -23,10 +23,26 @@ void HandController::setTargetGrip(GripType grip, uint16_t duration_ms) noexcept
 {
     const auto& cfg = GripDatabase[static_cast<size_t>(grip)];
     HAND_DEBUG("Side %d starting grip %d (Duration: %d ms)", static_cast<int>(side_), static_cast<int>(grip), duration_ms);
+
+    // Enable torque for all axes before any non-Open grip
+    if (!torque_enabled_) {
+        HAND_DEBUG("Side %d enabling torque for all servos", static_cast<int>(side_));
+        for (size_t i = 0; i < AXIS_COUNT; ++i) {
+            uint8_t id = Hand::getServoID(side_, static_cast<Finger>(i));
+            Servo s(id, bus_);
+            if (!s.setTorqueEnable(true)) {
+                HAND_DEBUG("Side %d torque enable FAILED for servo id %d", static_cast<int>(side_), static_cast<int>(id));
+            }
+        }
+        torque_enabled_ = true;
+    }
+
+    current_grip_ = grip;
+    pending_torque_disable_ = (grip == GripType::Open);
+
     uint32_t now = HAL_GetTick();
     for (size_t i = 0; i < AXIS_COUNT; ++i) {
-        uint16_t tgt_tinker = cfg.positions[i];
-        uint16_t tgt = Hand::mapToServoPos(tgt_tinker);
+        uint16_t tgt = Hand::mapToServoPos(cfg.positions[i]);
         start_pos_[i] = current_pos_[i];
         target_pos_[i] = tgt;
         start_time_ms_[i] = now;
@@ -67,84 +83,45 @@ void HandController::update() noexcept
 {
     const uint32_t now = HAL_GetTick();
 
-    // 1) Interpolate trajectories (every call, expected 100Hz)
+    // 1) Interpolate trajectories
+    bool all_done = true;
     for (size_t i = 0; i < AXIS_COUNT; ++i) {
         if (!moving_[i]) continue;
-        uint32_t start = start_time_ms_[i];
-        uint32_t dur = duration_ms_[i];
-        uint32_t elapsed = (now >= start) ? (now - start) : 0;
-        float t = (dur == 0) ? 1.0f : (static_cast<float>(elapsed) / static_cast<float>(dur));
+        all_done = false;
+        uint32_t elapsed = (now >= start_time_ms_[i]) ? (now - start_time_ms_[i]) : 0;
+        float t = (duration_ms_[i] == 0) ? 1.0f : (static_cast<float>(elapsed) / static_cast<float>(duration_ms_[i]));
         if (t >= 1.0f) {
             current_pos_[i] = target_pos_[i];
             moving_[i] = false;
-            // Log representative finger (Thumb, index 0) once when it finishes to avoid spamming 100Hz loop
             if (i == 0) {
                 HAND_DEBUG("Side %d representative finger %d reached target", static_cast<int>(side_), static_cast<int>(i));
             }
         } else {
             float s = smoothstep(t);
-            int32_t startp = static_cast<int32_t>(start_pos_[i]);
-            int32_t endp = static_cast<int32_t>(target_pos_[i]);
-            int32_t val = static_cast<int32_t>(startp + static_cast<int32_t>((endp - startp) * s));
+            int32_t val = static_cast<int32_t>(start_pos_[i]) +
+                          static_cast<int32_t>((static_cast<int32_t>(target_pos_[i]) - static_cast<int32_t>(start_pos_[i])) * s);
             if (val < 0) val = 0;
             if (val > 0xFFFF) val = 0xFFFF;
             current_pos_[i] = static_cast<uint16_t>(val);
         }
     }
 
-    // 2) Send synchronous position update for all axes (non-blocking transmit)
-    // Use a conservative time slice: remaining max of durations or 50ms
-    uint16_t send_time_ms = 50;
-    sendSyncWrite(send_time_ms);
+    // 2) Disable torque after Open grip fully reaches target
+    if (pending_torque_disable_ && torque_enabled_ && all_done) {
+        HAND_DEBUG("Side %d disabling torque after Open completed", static_cast<int>(side_));
+        for (size_t i = 0; i < AXIS_COUNT; ++i) {
+            uint8_t id = Hand::getServoID(side_, static_cast<Finger>(i));
+            Servo s(id, bus_);
+            if (!s.setTorqueEnable(false)) {
+                HAND_DEBUG("Side %d torque disable FAILED for servo id %d", static_cast<int>(side_), static_cast<int>(id));
+            }
+        }
+        torque_enabled_ = false;
+        pending_torque_disable_ = false;
+    }
 
-    // 3) Telemetry state-machine: every ~50ms, request then read next axis
-    const uint32_t telemetry_period = 50;
-    if (!pending_read_) {
-        if ((now - last_telemetry_ms_) >= telemetry_period) {
-            // start read for telemetry_idx_
-            uint8_t id = Hand::getServoID(side_, static_cast<Finger>(telemetry_idx_));
-            uint16_t expected = 0;
-            // request reading Load (2 bytes) and Speed (2 bytes) together by reading PosRead(0x38) maybe
-            // We'll read Load (2) and Speed (2) sequentially across ticks to keep it light.
-            // Start with Load register
-            bool ok = bus_.startReadRegister(id, static_cast<uint8_t>(ServoBus::Reg::Load), 2, expected);
-            if (ok) {
-                pending_expected_rx_ = expected;
-                pending_read_ = true;
-                pending_id_ = id;
-            } else {
-                // if start failed, skip and advance
-                telemetry_idx_ = (telemetry_idx_ + 1) % AXIS_COUNT;
-                last_telemetry_ms_ = now;
-            }
-        }
-    } else {
-        // finish read for pending_id_
-        uint8_t buf[2] = {0};
-        if (bus_.finishReadRegister(pending_id_, 2, buf, pending_expected_rx_)) {
-            int16_t load = static_cast<int16_t>((buf[1] << 8) | buf[0]);
-            // For demonstration: we compute a simple position error and feed into predictor
-            // position_error: target - current
-            uint8_t finger_idx = 0xFF;
-            // reverse lookup finger index from id
-            for (size_t i = 0; i < AXIS_COUNT; ++i) {
-                if (Hand::getServoID(side_, static_cast<Finger>(i)) == pending_id_) { finger_idx = static_cast<uint8_t>(i); break; }
-            }
-            if (finger_idx != 0xFF) {
-                int16_t speed = 0;
-                // quick attempt to read speed (blocking) - omitted for strict non-blocking; placeholder 0
-                float pos_err = static_cast<float>(static_cast<int32_t>(target_pos_[finger_idx]) - static_cast<int32_t>(current_pos_[finger_idx]));
-                float adj = predictGraspAdjustment(finger_idx, load, speed, pos_err);
-                if (adj != 0.0f) {
-                    HAND_DEBUG("Adjustment triggered on Side %d, Finger %d! Load: %d", static_cast<int>(side_), static_cast<int>(finger_idx), static_cast<int>(load));
-                }
-            }
-        }
-        // clear pending and advance
-        pending_read_ = false;
-        pending_expected_rx_ = 0;
-        pending_id_ = 0;
-        telemetry_idx_ = (telemetry_idx_ + 1) % AXIS_COUNT;
-        last_telemetry_ms_ = now;
+    // 3) Send sync-write only when torque is active
+    if (torque_enabled_) {
+        sendSyncWrite(50);
     }
 }

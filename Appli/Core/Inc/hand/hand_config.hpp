@@ -36,6 +36,9 @@ namespace HandControl {
 
 /**
  * @brief Definition der Finger-Indizes innerhalb einer Hand
+ *
+ * Hinweis: Die Servos haben feste IDs in der Reihe.
+ * Rechte Hand: IDs 1..6, Linke Hand: IDs 7..12
  */
 enum class Finger : uint8_t {
     Thumb = 0,
@@ -63,11 +66,12 @@ enum class GripType : uint8_t {
 
 /**
  * @brief Physische Limits und Parameter eines einzelnen Motors
+ * @note Alle Positionen/Offsets sind in nativen SmartServo-Einheiten (0..4095).
  */
 struct FingerConfig {
     std::string_view name;
-    uint16_t minPos;      // Entspricht 0 in Tinkerforge-Einheiten
-    uint16_t maxPos;      // Entspricht 9000 in Tinkerforge-Einheiten
+    uint16_t minPos;      // 0 in Servo-Einheiten
+    uint16_t maxPos;      // Max (4095) in Servo-Einheiten
     uint16_t maxSpeed;    // Standard: 2000
     uint16_t maxCurrent;  // in mA
 };
@@ -85,25 +89,25 @@ struct GripConfig {
  * @brief Globale Achsen-Konfiguration (identisch für links und rechts)
  */
 constexpr std::array<FingerConfig, static_cast<size_t>(Finger::Count)> AxisSettings = {{
-    {"Thumb Stretch", 0, 9000, 2000, 1500},
-    {"Index Stretch", 0, 9000, 2000, 1500},
-    {"Middle Stretch", 0, 9000, 2000, 1500},
-    {"Ring Stretch", 0, 9000, 2000, 1500},
-    {"Pinky Stretch", 0, 9000, 2000, 1500},
-    {"Thumb Opposition", 0, 9000, 2000, 1500}
+    {"Thumb Stretch", 0, 4095, 2000, 1500},
+    {"Index Stretch", 0, 4095, 2000, 1500},
+    {"Middle Stretch", 0, 4095, 2000, 1500},
+    {"Ring Stretch", 0, 4095, 2000, 1500},
+    {"Pinky Stretch", 0, 4095, 2000, 1500},
+    {"Thumb Opposition", 0, 4095, 2000, 1500}
 }};
 
 /**
- * @brief Griff-Datenbank basierend auf Tinkerforge-Einheiten (0-9000)
+ * @brief Griff-Datenbank basierend auf nativen SmartServo-Einheiten (0-4095)
  */
 constexpr std::array<GripConfig, static_cast<size_t>(GripType::Count)> GripDatabase = {{
     {GripType::Open, "OPEN", {0, 0, 0, 0, 0, 0}},
-    {GripType::Spitzgriff, "SPITZGRIFF", {9000, 9000, 9000, 9000, 9000, 9000}},
-    {GripType::Dreipunktgriff, "DREIPUNKTGRIFF", {7000, 7000, 7000, 0, 0, 4500}},
-    {GripType::Schluesselgriff, "SCHLUESSELGRIFF", {6000, 3000, 0, 0, 0, 6000}},
-    {GripType::Zylindergriff, "ZYLINDERGRIFF", {8000, 8000, 8000, 8000, 8000, 3000}},
-    {GripType::Hakengriff, "HAKENGRIFF", {0, 8000, 8000, 8000, 8000, 0}},
-    {GripType::SphaerischerGriff, "SPHAERISCHER_GRIFF", {6000, 6000, 6000, 6000, 6000, 4000}}
+    {GripType::Spitzgriff, "SPITZGRIFF", {4095, 4095, 4095, 4095, 4095, 4095}},
+    {GripType::Dreipunktgriff, "DREIPUNKTGRIFF", {3185, 3185, 3185, 0, 0, 2047}},
+    {GripType::Schluesselgriff, "SCHLUESSELGRIFF", {2730, 1365, 0, 0, 0, 2730}},
+    {GripType::Zylindergriff, "ZYLINDERGRIFF", {3640, 3640, 3640, 3640, 3640, 1365}},
+    {GripType::Hakengriff, "HAKENGRIFF", {0, 3640, 3640, 3640, 3640, 0}},
+    {GripType::SphaerischerGriff, "SPHAERISCHER_GRIFF", {2730, 2730, 2730, 2730, 2730, 1820}}
 }};
 
 /**
@@ -115,7 +119,7 @@ public:
 
     /**
      * @brief Berechnet die Servo-ID basierend auf Handseite und Finger
-     * Rechts: 1-6, Links: 7-12
+     * Rechte Hand: 1..6, Linke Hand: 7..12
      */
     static constexpr uint8_t getServoID(Side side, Finger finger) {
         uint8_t baseID = (side == Side::Right) ? 1 : 7;
@@ -123,11 +127,14 @@ public:
     }
 
     /**
-     * @brief Rechnet Tinkerforge-Einheiten (0-9000) in STS3215 Einheiten (0-4095) um
+     * @brief Konvertiert Eingabewert in Servo-Position.
+     *
+     * Nach der Umstellung werden die Griffwerte direkt in nativen
+     * Servo-Einheiten (0..4095) gespeichert, daher ist diese Funktion
+     * aktuell identisch zur Identität und gibt den Wert unverändert zurück.
      */
-    static constexpr uint16_t mapToServoPos(uint16_t tinkerPos) {
-        // Lineare Skalierung: (tinkerPos / 9000) * 4095
-        return static_cast<uint16_t>((static_cast<uint32_t>(tinkerPos) * 4095) / 9000);
+    static constexpr uint16_t mapToServoPos(uint16_t servoPos) {
+        return servoPos;
     }
 };
 

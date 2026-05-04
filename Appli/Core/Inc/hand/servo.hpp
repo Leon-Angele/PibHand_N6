@@ -37,8 +37,12 @@ private:
     uint32_t tx_timeout_ms_;
     uint32_t rx_timeout_ms_;
 
-    // single-instance registration (this code targets USART3 usage)
-    static Stm32UartDmaPort* instance_;
+    // Multi-port registry: supports USART3 (servo bus) + LPUART1 (VCP) simultaneously.
+    // Each Stm32UartDmaPort instance registers itself here so that onTxComplete/onRxComplete
+    // can route the HAL callback to the correct port object.
+    static constexpr uint8_t MAX_INSTANCES = 2;
+    static Stm32UartDmaPort* instances_[MAX_INSTANCES];
+    static uint8_t instance_count_;
 };
 
 class ServoBus {

@@ -120,6 +120,7 @@ int main(void)
     BSP_LED_Init(LED_RED);
     BSP_LED_Init(LED_GREEN);
 
+
   /* USER CODE END 2 */
 
   /* Initialize leds */
@@ -522,10 +523,21 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-// printf() Unterstützung über LPUART1
+// Custom __io_putchar for LPUART1 (overrides BSP version that uses USART1)
+int __io_putchar(int ch)
+{
+  HAL_UART_Transmit(&hlpuart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
+
+// Bridge for printf() via newlib _write (same pattern as FSBL)
 __attribute__((weak)) int _write(int file, char *ptr, int len)
 {
-  HAL_UART_Transmit(&hlpuart1, (uint8_t *)ptr, len, HAL_MAX_DELAY);
+  int DataIdx;
+  for (DataIdx = 0; DataIdx < len; DataIdx++)
+  {
+    __io_putchar(*ptr++);
+  }
   return len;
 }
 

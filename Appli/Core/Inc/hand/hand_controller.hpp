@@ -36,12 +36,10 @@ private:
     std::array<uint32_t, AXIS_COUNT> duration_ms_{};
     std::array<bool, AXIS_COUNT> moving_{};
 
-    // Telemetry state-machine (rotate through axes)
-    uint8_t telemetry_idx_ = 0;
-    uint32_t last_telemetry_ms_ = 0;
-    bool pending_read_ = false;
-    uint16_t pending_expected_rx_ = 0;
-    uint8_t pending_id_ = 0;
+    // Torque lifecycle: enable before first non-Open grip, disable after Open completes
+    HandControl::GripType current_grip_ = HandControl::GripType::Open;
+    bool torque_enabled_ = false;
+    bool pending_torque_disable_ = false;
 
     // Helpers
     static float smoothstep(float t) noexcept;

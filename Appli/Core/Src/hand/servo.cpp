@@ -6,13 +6,17 @@
 #include "hand/servo.hpp"
 #include "main.h"
 
-// Stm32UartDmaPort static instance
-Stm32UartDmaPort* Stm32UartDmaPort::instance_ = nullptr;
+// Multi-port registry: each Stm32UartDmaPort registers itself so that
+// onTxComplete/onRxComplete can route HAL callbacks to the correct port object.
+Stm32UartDmaPort* Stm32UartDmaPort::instances_[Stm32UartDmaPort::MAX_INSTANCES] = {nullptr, nullptr};
+uint8_t Stm32UartDmaPort::instance_count_ = 0;
 
 Stm32UartDmaPort::Stm32UartDmaPort(UART_HandleTypeDef* huart, uint32_t tx_timeout_ms, uint32_t rx_timeout_ms)
     : huart_(huart), tx_done_(false), rx_done_(false), tx_timeout_ms_(tx_timeout_ms), rx_timeout_ms_(rx_timeout_ms)
 {
-    instance_ = this;
+    if (instance_count_ < MAX_INSTANCES) {
+        instances_[instance_count_++] = this;
+    }
 }
 
 bool Stm32UartDmaPort::transmitDMA(const uint8_t* data, uint16_t length)
@@ -57,15 +61,21 @@ bool Stm32UartDmaPort::receiveDMA(uint8_t* buffer, uint16_t length)
 
 void Stm32UartDmaPort::onTxComplete(UART_HandleTypeDef* huart)
 {
-    if (instance_ && instance_->huart_ == huart) {
-        instance_->tx_done_ = true;
+    for (uint8_t i = 0; i < instance_count_; ++i) {
+        if (instances_[i] && instances_[i]->huart_ == huart) {
+            instances_[i]->tx_done_ = true;
+            break;
+        }
     }
 }
 
 void Stm32UartDmaPort::onRxComplete(UART_HandleTypeDef* huart)
 {
-    if (instance_ && instance_->huart_ == huart) {
-        instance_->rx_done_ = true;
+    for (uint8_t i = 0; i < instance_count_; ++i) {
+        if (instances_[i] && instances_[i]->huart_ == huart) {
+            instances_[i]->rx_done_ = true;
+            break;
+        }
     }
 }
 
@@ -89,7 +99,7 @@ bool ServoBus::writeRegister(uint8_t id, uint8_t reg, const uint8_t* data, uint8
     tx_buf_[idx++] = 0xFF;
     tx_buf_[idx++] = 0xFF;
     tx_buf_[idx++] = id;
-    tx_buf_[idx++] = params_len + 1; // Length field: instruction + params_len + checksum? use params_len + 1 to match formula
+    tx_buf_[idx++] = params_len + 2; // LEN = INST(1) + PARAMS(params_len) + CHECKSUM(1)
     tx_buf_[idx++] = static_cast<uint8_t>(Instruction::Write);
     tx_buf_[idx++] = reg;
     for (uint8_t i = 0; i < len; ++i) tx_buf_[idx++] = data[i];
@@ -98,40 +108,11 @@ bool ServoBus::writeRegister(uint8_t id, uint8_t reg, const uint8_t* data, uint8
     uint8_t csum = checksum(&tx_buf_[2], static_cast<size_t>(idx - 2));
     tx_buf_[idx++] = csum;
 
-    // Transmit
-    if (!port_.transmitDMA(tx_buf_.data(), (uint16_t)idx)) return false;
-
-    // Try to read a status packet (ID, LEN, ERR, ...). Expected length minimal = 6 (no params)
-    uint8_t expected_rx = 6;
-    if (!port_.receiveDMA(rx_buf_.data(), expected_rx)) {
-        return false;
-    }
-
-    // Validate response header
-    if (rx_buf_[0] != 0xFF || rx_buf_[1] != 0xFF) return false;
-    if (rx_buf_[2] != id) return false;
-    // check checksum
-    uint8_t rlen = rx_buf_[3];
-    uint8_t payload_len = static_cast<uint8_t>(rlen - 2); // Error + params
-    size_t full_len = 2 + 1 + 1 + payload_len + 1; // header(2)+ID+LEN+payload+checksum
-    if (full_len > rx_buf_.size()) return false;
-    // If more bytes expected, try to receive them
-    if (full_len > expected_rx) {
-        // read remaining bytes
-        uint8_t more = (uint8_t)(full_len - expected_rx);
-        if (!port_.receiveDMA(rx_buf_.data() + expected_rx, more)) return false;
-    }
-
-    // compute checksum over ID..params
-    uint8_t csum_r = checksum(&rx_buf_[2], 1 + 1 + payload_len); // ID + LEN + (ERR+params)
-    if (csum_r != rx_buf_[2 + 2 + payload_len + 1]) {
-        // fallback: simplistic check (if indexing fails) - but return false
-        // Note: above index is (2 header) + ID(1) + LEN(1) + payload_len + checksum
-    }
-
-    // Check error byte
-    uint8_t error = rx_buf_[4];
-    return (error == 0);
+    // Transmit and return immediately.
+    // SCS/Feetech servos only return status packets for READ commands by default
+    // (Status Return Level = 1). Waiting for a response after WRITE would cause
+    // a 200 ms RX timeout per servo and block the entire update loop.
+    return port_.transmitDMA(tx_buf_.data(), (uint16_t)idx);
 }
 
 bool ServoBus::readRegister(uint8_t id, uint8_t reg, uint8_t len, uint8_t* out)
@@ -142,7 +123,7 @@ bool ServoBus::readRegister(uint8_t id, uint8_t reg, uint8_t len, uint8_t* out)
     tx_buf_[idx++] = 0xFF;
     tx_buf_[idx++] = 0xFF;
     tx_buf_[idx++] = id;
-    tx_buf_[idx++] = params_len + 1; // LEN field (instruction + params + checksum field handled in checksum)
+    tx_buf_[idx++] = params_len + 2; // LEN = INST(1) + PARAMS(params_len) + CHECKSUM(1)
     tx_buf_[idx++] = static_cast<uint8_t>(Instruction::Read);
     tx_buf_[idx++] = reg;
     tx_buf_[idx++] = len;
@@ -181,7 +162,7 @@ bool ServoBus::startReadRegister(uint8_t id, uint8_t reg, uint8_t len, uint16_t&
     tx_buf_[idx++] = 0xFF;
     tx_buf_[idx++] = 0xFF;
     tx_buf_[idx++] = id;
-    tx_buf_[idx++] = params_len + 1; // LEN field
+    tx_buf_[idx++] = params_len + 2; // LEN = INST(1) + PARAMS(params_len) + CHECKSUM(1)
     tx_buf_[idx++] = static_cast<uint8_t>(Instruction::Read);
     tx_buf_[idx++] = reg;
     tx_buf_[idx++] = len;
@@ -229,7 +210,7 @@ bool ServoBus::syncWritePositions(const uint8_t* ids, const uint16_t* positions,
     tx_buf_[idx++] = 0xFF;
     tx_buf_[idx++] = 0xFF;
     tx_buf_[idx++] = 0xFE; // broadcast
-    tx_buf_[idx++] = static_cast<uint8_t>(params_len + 1); // LEN field
+    tx_buf_[idx++] = static_cast<uint8_t>(params_len + 2); // LEN = INST(1) + PARAMS(params_len) + CHECKSUM(1)
     tx_buf_[idx++] = INST_SYNC_WRITE;
     tx_buf_[idx++] = start_reg;
     tx_buf_[idx++] = data_len;
