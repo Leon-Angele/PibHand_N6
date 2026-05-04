@@ -103,6 +103,8 @@ void Error_Handler(void);
 #define OCTOSPI_IO4_GPIO_Port GPION
 #define OCTOSPI_DQS_Pin GPIO_PIN_0
 #define OCTOSPI_DQS_GPIO_Port GPION
+#define EXT_SMPS_MODE_Pin GPIO_PIN_12
+#define EXT_SMPS_MODE_GPIO_Port GPIOB
 #define OCTOSPI_IO1_Pin GPIO_PIN_3
 #define OCTOSPI_IO1_GPIO_Port GPION
 #define OCTOSPI_IO3_Pin GPIO_PIN_5
