@@ -18,12 +18,12 @@ extern UART_HandleTypeDef hlpuart1;  // VCP
 static hand_grip_executor_t c_executor_cb = nullptr;
 
 // Default C++ objects (mirror what main.cpp had)
-static Stm32UartDmaPort servoPort(&huart3);   // USART3 for servo bus
-static Stm32UartDmaPort vpcPort(&hlpuart1);   // LPUART1 for VCP/commands
-static ServoBus servoBus(servoPort);
-static SerialCommander commander(vpcPort);    // Commander uses VCP port!
-static HandController rightHand(Hand::Side::Right, servoBus);
-static HandController leftHand(Hand::Side::Left, servoBus);
+static Stm32UartDmaPort __attribute__((section("noncacheable_buffer"))) servoPort(&huart3);   // USART3 for servo bus
+static Stm32UartDmaPort __attribute__((section("noncacheable_buffer"))) vpcPort(&hlpuart1);   // LPUART1 for VCP/commands
+static ServoBus __attribute__((section("noncacheable_buffer"))) servoBus(servoPort);
+static SerialCommander __attribute__((section("noncacheable_buffer"))) commander(vpcPort);    // Commander uses VCP port!
+static HandController __attribute__((section("noncacheable_buffer"))) rightHand(Hand::Side::Right, servoBus);
+static HandController __attribute__((section("noncacheable_buffer"))) leftHand(Hand::Side::Left, servoBus);
 
 // Default executor: calls C++ controllers directly
 class DefaultGripExecutor : public ICommandExecutor {
