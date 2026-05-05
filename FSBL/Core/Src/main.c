@@ -2,7 +2,17 @@
 /**
   ******************************************************************************
   * @file           : main.c
-  * @brief          : First Stage Bootloader (FSBL) for STM32N6
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
   ******************************************************************************
   */
 /* USER CODE END Header */
@@ -12,7 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "extmem.h"
-#include "stm32n6xx_hal_bsec.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,8 +42,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-__IO uint32_t BspButtonState = BUTTON_RELEASED;
-
 XSPI_HandleTypeDef hxspi2;
 
 /* USER CODE BEGIN PV */
@@ -43,7 +51,6 @@ XSPI_HandleTypeDef hxspi2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_GPDMA1_Init(void);
 static void MX_XSPI2_Init(void);
 /* USER CODE BEGIN PFP */
 void Error_Handler(void);
@@ -65,9 +72,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  /* Unlock BSEC Access Port & Enable Debug */
-  BSEC->AP_UNLOCK = 0xB4;
-  BSEC->DBGCR = 0xB451B400;
+
   /* USER CODE END 1 */
 
   /* Enable the CPU Cache */
@@ -99,14 +104,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_GPDMA1_Init();
   MX_XSPI2_Init();
   /* USER CODE BEGIN 2 */
-  /* LED check: indicates FSBL is running */
-  BSP_LED_Init(LED1);
-  BSP_LED_On(LED1);
-  HAL_Delay(2000);
-
   /* Initialise the serial memory */
   MX_EXTMEM_Init();
 
@@ -118,6 +117,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+     __NOP();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -125,6 +125,34 @@ int main(void)
   /* USER CODE END 3 */
 }
 /* USER CODE BEGIN CLK 1 */
+ /*         The system Clock is configured as follows :
+  *            CPU Clock source               = IC1_CK
+  *            System bus Clock source        = IC2_IC6_IC11_CK
+  *            CPUCLK (sysa_ck) (Hz)          = 600000000
+  *            SYSCLK AXI (sysb_ck) (Hz)      = 400000000
+  *            SYSCLK NPU (sysc_ck) (Hz)      = 300000000
+  *            SYSCLK AXISRAM3/4/5/6 (sysd_ck) (Hz) = 400000000
+  *            HCLKx(Hz)                      = 200000000
+  *            PCLKx(Hz)                      = 200000000
+  *            AHB Prescaler                  = 2
+  *            APB1 Prescaler                 = 1
+  *            APB2 Prescaler                 = 1
+  *            APB4 Prescaler                 = 1
+  *            APB5 Prescaler                 = 1
+  *            PLL1 State                     = ON
+  *            PLL1 clock source              = HSI
+  *            PLL1 M                         = 4
+  *            PLL1 N                         = 75
+  *            PLL1 P1                        = 1
+  *            PLL1 P2                        = 1
+  *            PLL1 FRACN                     = 0
+  *            PLL2 State                     = BYPASS
+  *            PLL2 clock source              = HSI
+  *            PLL3 State                     = BYPASS
+  *            PLL3 clock source              = HSI
+  *            PLL4 State                     = BYPASS
+  *            PLL4 clock source              = HSI
+  */
 /* USER CODE END CLK 1 */
 
 /**
@@ -187,18 +215,12 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_NONE;
   RCC_OscInitStruct.PLL1.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL1.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL1.PLLM = 2;
+  RCC_OscInitStruct.PLL1.PLLM = 4;
   RCC_OscInitStruct.PLL1.PLLN = 75;
   RCC_OscInitStruct.PLL1.PLLFractional = 0;
   RCC_OscInitStruct.PLL1.PLLP1 = 1;
   RCC_OscInitStruct.PLL1.PLLP2 = 1;
-  RCC_OscInitStruct.PLL2.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL2.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL2.PLLM = 4;
-  RCC_OscInitStruct.PLL2.PLLN = 75;
-  RCC_OscInitStruct.PLL2.PLLFractional = 0;
-  RCC_OscInitStruct.PLL2.PLLP1 = 2;
-  RCC_OscInitStruct.PLL2.PLLP2 = 1;
+  RCC_OscInitStruct.PLL2.PLLState = RCC_PLL_NONE;
   RCC_OscInitStruct.PLL3.PLLState = RCC_PLL_NONE;
   RCC_OscInitStruct.PLL4.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
@@ -214,17 +236,17 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK4;
   RCC_ClkInitStruct.CPUCLKSource = RCC_CPUCLKSOURCE_IC1;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_IC2_IC6_IC11;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV1;
   RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV1;
   RCC_ClkInitStruct.APB5CLKDivider = RCC_APB5_DIV1;
-  RCC_ClkInitStruct.IC1Selection.ClockSelection = RCC_ICCLKSOURCE_PLL2;
-  RCC_ClkInitStruct.IC1Selection.ClockDivider = 1;
+  RCC_ClkInitStruct.IC1Selection.ClockSelection = RCC_ICCLKSOURCE_PLL1;
+  RCC_ClkInitStruct.IC1Selection.ClockDivider = 2;
   RCC_ClkInitStruct.IC2Selection.ClockSelection = RCC_ICCLKSOURCE_PLL1;
-  RCC_ClkInitStruct.IC2Selection.ClockDivider = 6;
+  RCC_ClkInitStruct.IC2Selection.ClockDivider = 3;
   RCC_ClkInitStruct.IC6Selection.ClockSelection = RCC_ICCLKSOURCE_PLL1;
-  RCC_ClkInitStruct.IC6Selection.ClockDivider = 3;
+  RCC_ClkInitStruct.IC6Selection.ClockDivider = 4;
   RCC_ClkInitStruct.IC11Selection.ClockSelection = RCC_ICCLKSOURCE_PLL1;
   RCC_ClkInitStruct.IC11Selection.ClockDivider = 3;
 
@@ -232,30 +254,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief GPDMA1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPDMA1_Init(void)
-{
-
-  /* USER CODE BEGIN GPDMA1_Init 0 */
-
-  /* USER CODE END GPDMA1_Init 0 */
-
-  /* Peripheral clock enable */
-  __HAL_RCC_GPDMA1_CLK_ENABLE();
-
-  /* USER CODE BEGIN GPDMA1_Init 1 */
-
-  /* USER CODE END GPDMA1_Init 1 */
-  /* USER CODE BEGIN GPDMA1_Init 2 */
-
-  /* USER CODE END GPDMA1_Init 2 */
-
 }
 
 /**
@@ -316,48 +314,12 @@ static void MX_XSPI2_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
 
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPION_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-
-  /*Configure GPIO pin : I2C1_SDA_Pin */
-  GPIO_InitStruct.Pin = I2C1_SDA_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
-  HAL_GPIO_Init(I2C1_SDA_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : I2CA_SCL_Pin */
-  GPIO_InitStruct.Pin = I2CA_SCL_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
-  HAL_GPIO_Init(I2CA_SCL_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : I2C2_SDA_Pin I2C2_SCL_Pin */
-  GPIO_InitStruct.Pin = I2C2_SDA_Pin|I2C2_SCL_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF4_I2C2;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PA10 UCPD1_VSENSE_Pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_10|UCPD1_VSENSE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -370,16 +332,16 @@ static void MX_GPIO_Init(void)
   * @brief  User OTP fuse Configuration
   *         The User Option Bytes are configured as follows :
   *            VDDIO_HSLV = 1 (enable the configuration of pads below 2.5V,
-  *                            I/O speed optimization at low-voltage allowed)
+  *                            I/O speed otpmization at low-voltage allowed)
   *            XSPI1_HSLV = 1 (enable I/O XSPIM Port 1 high-speed option)
   *            XSPI2_HSLV = 1 (enable I/O XSPIM Port 2 high-speed option)
   *            Other User Option Bytes remain unchanged
-  * @retval 0 on success, negative value on error
+  * @retval None
   */
 static int32_t OTP_Config(void)
 {
   #define BSEC_HW_CONFIG_ID        124U
-  #define BSEC_HWS_HSLV_VDDIO3    (1U<<15)
+  #define BSEC_HWS_HSLV_VDDIO3     (1U<<15)
 
   uint32_t fuse_id, bit_mask, data;
   BSEC_HandleTypeDef sBsecHandler;
@@ -395,7 +357,7 @@ static int32_t OTP_Config(void)
   if (HAL_BSEC_OTP_Read(&sBsecHandler, fuse_id, &data) == HAL_OK)
   {
     /* Check if bit has already been set */
-    bit_mask = BSEC_HWS_HSLV_VDDIO3;
+    bit_mask = BSEC_HWS_HSLV_VDDIO3 ;
     if ((data & bit_mask) != bit_mask)
     {
       data |= bit_mask;
@@ -426,7 +388,7 @@ static int32_t OTP_Config(void)
   }
   else
   {
-    /* Error : Fuse read unsuccessful */
+    /* Error  : Fuse read unsuccessful */
     retr = -4;
   }
   return retr;
@@ -459,8 +421,17 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(file);
+  UNUSED(line);
+
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+
+  /* Infinite loop */
+  while (1)
+  {
+  }
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

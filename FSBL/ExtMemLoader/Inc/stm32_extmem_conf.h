@@ -58,9 +58,6 @@ extern XSPI_HandleTypeDef       hxspi1;
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 
-
-
-
 /** @defgroup EXTMEM_CONF_Exported_constants EXTMEM_CONF exported constante
   * @{
   */
@@ -75,7 +72,6 @@ enum {
 #define EXTMEM_MEMORY_BOOTXIP  EXTMEMORY_1
 #define EXTMEM_XIP_IMAGE_OFFSET 0x00100000
 #define EXTMEM_HEADER_OFFSET 0x00000400
-
 /* Exported configuration --------------------------------------------------------*/
 /** @defgroup EXTMEM_CONF_Exported_configuration EXTMEM_CONF exported configuration definition
   * @{
@@ -91,9 +87,7 @@ EXTMEM_DefinitionTypeDef extmem_list_config[1] =
     .ConfigType = EXTMEM_LINK_CONFIG_8LINES,
     .NorSfdpObject =
     {
-      { // Additional braces added here
-        0
-      }
+      {0}
     }
   },
 };
